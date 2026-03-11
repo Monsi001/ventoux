@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Variables ──────────────────────────────────────────────────────────────── */
+:root {
+  --color-bg: #0A0908;
+  --color-surface: #141312;
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-accent: #FF6B35;
+  --color-accent-muted: rgba(255, 107, 53, 0.15);
+  --scrollbar-width: 6px;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: var(--scrollbar-width); height: var(--scrollbar-width); }
+::-webkit-scrollbar-track { background: var(--color-surface); }
+::-webkit-scrollbar-thumb { background: rgba(255, 107, 53, 0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 107, 53, 0.5); }
+
+/* ─── Base styles ────────────────────────────────────────────────────────────── */
+body {
+  background: var(--color-bg);
+  min-height: 100vh;
+  /* Grain texture subtile */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.025'/%3E%3C/svg%3E");
+}
+
+/* ─── Composants utilitaires ─────────────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply bg-stone-900/60 backdrop-blur-sm border border-white/[0.06] rounded-2xl shadow-card;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:border-ventoux-500/20 hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  .btn-primary {
+    @apply bg-ventoux-500 hover:bg-ventoux-400 text-white font-display font-semibold 
+           tracking-wide px-6 py-3 rounded-xl transition-all duration-200 
+           hover:shadow-ventoux-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-white/[0.06] hover:bg-white/[0.10] text-summit-light border border-white/[0.08]
+           font-body px-4 py-2.5 rounded-xl transition-all duration-200 active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply text-stone-400 hover:text-summit-light hover:bg-white/[0.05]
+           px-3 py-2 rounded-lg transition-all duration-200;
+  }
+
+  .input {
+    @apply bg-stone-900/80 border border-white/[0.08] text-summit-light placeholder-stone-500
+           rounded-xl px-4 py-3 w-full focus:outline-none focus:border-ventoux-500/50 
+           focus:ring-1 focus:ring-ventoux-500/30 transition-all duration-200 font-body;
+  }
+
+  .label {
+    @apply text-stone-400 text-sm font-medium mb-1.5 block;
+  }
+
+  .stat-card {
+    @apply card p-5 space-y-1;
+  }
+  
+  .stat-value {
+    @apply text-3xl font-display font-bold text-summit-light tracking-tight;
+  }
+  
+  .stat-label {
+    @apply text-stone-500 text-xs uppercase tracking-widest font-medium;
+  }
+
+  .section-title {
+    @apply text-xl font-display font-semibold text-summit-light tracking-wide uppercase;
+  }
+
+  /* Zones de puissance */
+  .zone-badge {
+    @apply text-xs font-mono font-bold px-2 py-0.5 rounded-md;
+  }
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────────── */
+@layer utilities {
+  .animate-in {
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+}
+
+/* ─── Skeleton loading ───────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+  border-radius: 8px;
+}

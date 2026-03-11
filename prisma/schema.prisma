@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  height        Float?    // cm
+  weight        Float?    // kg
+  ftp           Int?      // watts
+  stravaId      String?   @unique
+  stravaToken   String?
+  stravaRefresh String?
+  stravaExpiry  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  races         Race[]
+  activities    Activity[]
+  trainingPlans TrainingPlan[]
+  constraints   WeeklyConstraint[]
+
+  @@map("users")
+}
+
+model Race {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  date        DateTime
+  distance    Float    // km
+  elevation   Int      // m D+
+  location    String?
+  targetLevel String   @default("FINISH") // FINISH | TOP_25 | TOP_10 | PODIUM
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingPlans TrainingPlan[]
+
+  @@map("races")
+}
+
+model TrainingPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  raceId      String
+  generatedAt DateTime @default(now())
+  weeks       Json     // TrainingWeek[]
+  phases      Json     // PhasePlan[]
+  aiNotes     String?
+  isActive    Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  race Race @relation(fields: [raceId], references: [id], onDelete: Cascade)
+
+  @@map("training_plans")
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  userId      String
+  source      ActivitySource @default(MANUAL)
+  stravaId    String?      @unique
+  type        ActivityType
+  name        String
+  date        DateTime
+  duration    Int          // seconds
+  distance    Float?       // km
+  elevation   Int?         // m D+
+  avgPower    Int?         // watts
+  maxPower    Int?         // watts
+  avgHr       Int?         // bpm
+  maxHr       Int?         // bpm
+  avgSpeed    Float?       // km/h
+  tss         Float?       // Training Stress Score
+  normalizedPower Int?     // watts
+  intensityFactor Float?
+  calories    Int?
+  gpxData     String?      // raw GPX
+  fitData     Bytes?       // raw FIT
+  rawData     Json?        // parsed data summary
+  notes       String?
+  createdAt   DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+model WeeklyConstraint {
+  id            String   @id @default(cuid())
+  userId        String
+  weekStart     DateTime // Monday of the week
+  availableDays Json     // { mon: bool, tue: bool, wed: bool, thu: bool, fri: bool, sat: bool, sun: bool }
+  maxHours      Float?   // max training hours this week
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@map("weekly_constraints")
+}
+
+enum ActivitySource {
+  STRAVA
+  MYWHOOSH
+  MANUAL
+}
+
+enum ActivityType {
+  RIDE
+  VIRTUAL_RIDE
+  RUN
+  STRENGTH
+  HIKE
+  OTHER
+}
