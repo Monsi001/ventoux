@@ -5,6 +5,7 @@ import { fr } from 'date-fns/locale'
 import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle } from 'lucide-react'
 import type { Activity as ActivityType } from '@/types'
 import { formatDuration } from '@/lib/training'
+import { cachedFetch } from '@/lib/fetch-cache'
 
 const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
   STRAVA:    { label: 'Strava',    color: '#FC4C02' },
@@ -34,22 +35,22 @@ export default function ActivitiesPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    loadActivities()
-    checkStrava()
+    loadAll()
   }, [])
 
-  async function loadActivities() {
+  async function loadAll() {
     setLoading(true)
-    const res = await fetch('/api/activities?limit=100')
-    const data = await res.json()
-    setActivities(Array.isArray(data) ? data : [])
+    const data = await cachedFetch('/api/init?include=profile,activities&activityLimit=100')
+    setActivities(Array.isArray(data.activities) ? data.activities : [])
+    setStravaConnected(!!data.profile?.stravaId)
     setLoading(false)
   }
 
-  async function checkStrava() {
-    const res = await fetch('/api/profile')
-    const profile = await res.json()
-    setStravaConnected(!!profile?.stravaId)
+  async function loadActivities() {
+    setLoading(true)
+    const data = await cachedFetch('/api/init?include=activities&activityLimit=100')
+    setActivities(Array.isArray(data.activities) ? data.activities : [])
+    setLoading(false)
   }
 
   async function syncStrava() {

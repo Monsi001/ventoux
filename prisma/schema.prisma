@@ -15,6 +15,9 @@ model User {
   height        Float?    // cm
   weight        Float?    // kg
   ftp           Int?      // watts
+  homeLat       Float?    // latitude domicile
+  homeLng       Float?    // longitude domicile
+  homeCity      String?   // ville domicile
   stravaId      String?   @unique
   stravaToken   String?
   stravaRefresh String?
@@ -126,4 +129,29 @@ enum ActivityType {
   STRENGTH
   HIKE
   OTHER
+}
+
+// ─── Catalogue MyWhoosh ───────────────────────────────────────────────────────
+
+model MywhooshWorkout {
+  id              String   @id @default(cuid())
+  mywhooshId      Int      @unique
+  name            String
+  description     String?  @db.Text
+  categoryId      Int
+  categoryName    String
+  duration        Int      // seconds
+  tss             Int?
+  intensityFactor Float?
+  kj              Int?
+  stepCount       Int
+  steps           Json     // WorkoutstepsTMap array
+  authorName      String?
+  isRecovery      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([categoryName])
+  @@index([duration])
+  @@index([tss])
+  @@map("mywhoosh_workouts")
 }

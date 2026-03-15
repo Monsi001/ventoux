@@ -7,6 +7,9 @@ export interface UserProfile {
   height: number | null   // cm
   weight: number | null   // kg
   ftp: number | null      // watts
+  homeLat: number | null
+  homeLng: number | null
+  homeCity: string | null
   stravaId: string | null
   createdAt: string
 }
@@ -71,6 +74,9 @@ export interface TrainingSession {
   intensityZone: PowerZone
   completed?: boolean
   activityId?: string   // lié à une Activity si réalisée
+  mywhooshWorkoutId?: string    // référence au workout MyWhoosh sélectionné
+  mywhooshWorkoutName?: string  // nom du workout MyWhoosh pour affichage
+  indoor?: boolean              // true = home trainer / MyWhoosh
 }
 
 export type SessionType =
@@ -156,6 +162,43 @@ export interface FitnessMetrics {
   atl: number   // Acute Training Load (fatigue)
   tsb: number   // Training Stress Balance (forme = CTL - ATL)
   tss: number   // TSS du jour
+}
+
+// ─── Strava ───────────────────────────────────────────────────────────────────
+
+// ─── MyWhoosh Workouts ───────────────────────────────────────────────────────
+
+export interface MywhooshWorkout {
+  id: string
+  mywhooshId: number
+  name: string
+  description: string | null
+  categoryId: number
+  categoryName: string
+  duration: number      // seconds
+  tss: number | null
+  intensityFactor: number | null
+  kj: number | null
+  stepCount: number
+  steps: MywhooshStep[]
+  authorName: string | null
+  isRecovery: boolean
+}
+
+export interface MywhooshStep {
+  ID: number
+  StepType: 'E_WarmUp' | 'E_Normal' | 'E_FreeRide' | 'E_CoolDown'
+  Power: number          // FTP multiplier (0.5 = 50% FTP)
+  StartPower: number     // for ramps
+  EndPower: number       // for ramps
+  Time: number           // seconds
+  Rpm: number            // cadence target (0 = free)
+  IntervalId: number
+  WorkoutMessage: Array<{
+    ID: number
+    Time: number
+    Message: string
+  }>
 }
 
 // ─── Strava ───────────────────────────────────────────────────────────────────

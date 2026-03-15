@@ -34,14 +34,9 @@ export async function POST() {
     accessToken = refreshed.access_token
   }
 
-  // Récupérer depuis la dernière activité connue
-  const lastActivity = await prisma.activity.findFirst({
-    where: { userId: session.user.id, source: 'STRAVA' },
-    orderBy: { date: 'desc' },
-    select: { date: true },
-  })
-
-  const after = lastActivity ? lastActivity.date : subDays(new Date(), 90)
+  // Toujours resync les 14 derniers jours minimum pour ne rien rater
+  // (les activités mises à jour après coup sur Strava seront captées)
+  const after = subDays(new Date(), 14)
   const activities = await getAllStravaActivities(accessToken, after)
 
   let imported = 0
@@ -54,9 +49,21 @@ export async function POST() {
     }
 
     try {
-      const result = await prisma.activity.upsert({
+      await prisma.activity.upsert({
         where: { stravaId: mapped.stravaId! },
-        update: {},
+        update: {
+          duration: mapped.duration,
+          distance: mapped.distance,
+          elevation: mapped.elevation,
+          avgPower: mapped.avgPower,
+          maxPower: mapped.maxPower,
+          avgHr: mapped.avgHr,
+          maxHr: mapped.maxHr,
+          avgSpeed: mapped.avgSpeed,
+          normalizedPower: mapped.normalizedPower,
+          tss: tss ?? mapped.tss,
+          name: mapped.name,
+        },
         create: { ...mapped, tss },
       })
       imported++

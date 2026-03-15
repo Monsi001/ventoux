@@ -13,6 +13,7 @@ import { calculatePMC, estimateVentouxTime, formatMinutes } from '@/lib/training
 import { format, differenceInDays, startOfWeek, addDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import type { Activity as ActivityType, TrainingPlan, Race, UserProfile } from '@/types'
+import { cachedFetch } from '@/lib/fetch-cache'
 
 // ─── Types inline ─────────────────────────────────────────────────────────────
 
@@ -37,19 +38,11 @@ export default function DashboardPage() {
   async function loadDashboard() {
     setLoading(true)
     try {
-      const [userRes, racesRes, activitiesRes, plansRes] = await Promise.all([
-        fetch('/api/profile'),
-        fetch('/api/races'),
-        fetch('/api/activities?limit=60'),
-        fetch('/api/plan/generate'),
-      ])
-
-      const [user, races, activities, plans] = await Promise.all([
-        userRes.json(),
-        racesRes.json(),
-        activitiesRes.json(),
-        plansRes.json(),
-      ])
+      const initData = await cachedFetch('/api/init?include=profile,races,activities,plans&activityLimit=60')
+      const user = initData.profile
+      const races = Array.isArray(initData.races) ? initData.races : []
+      const activities = Array.isArray(initData.activities) ? initData.activities : []
+      const plans = Array.isArray(initData.plans) ? initData.plans : []
 
       const activeRace = Array.isArray(races)
         ? races.find((r: Race) => r.isActive) || races[0]

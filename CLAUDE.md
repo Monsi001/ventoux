@@ -12,3 +12,10 @@ docker compose up -d
 ## Credentials demo
 - Email : `demo@ventoux.app`
 - Mot de passe : `ventoux2026`
+
+## MyWhoosh Workouts
+- 731 workouts importés depuis le cache local MyWhoosh
+- Import : `npm run db:import-mywhoosh`
+- Les séances vélo indoor sont sélectionnées automatiquement dans le catalogue (lib/workout-matcher.ts)
+- Les séances de renfo sont générées par l'IA (lib/claude.ts)
+- Prisma singleton dans `lib/db.ts`

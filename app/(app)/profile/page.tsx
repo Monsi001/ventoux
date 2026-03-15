@@ -5,6 +5,7 @@ import { fr } from 'date-fns/locale'
 import { User, Zap, Link2, Calendar, Check, Loader2, RefreshCw, Mountain } from 'lucide-react'
 import { estimateVentouxTime, formatMinutes, POWER_ZONES, getPowerZoneBounds } from '@/lib/training'
 import type { UserProfile, WeeklyConstraint } from '@/types'
+import { invalidateCache } from '@/lib/fetch-cache'
 
 const DAYS = [
   { key: 'mon', label: 'Lun' }, { key: 'tue', label: 'Mar' },
@@ -58,11 +59,28 @@ export default function ProfilePage() {
 
   async function saveProfile() {
     setSaving(true)
+    const oldFtp = profile?.ftp
+    const newFtp = form.ftp ? parseInt(form.ftp) : null
+
     await fetch('/api/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
+
+    invalidateCache('/api/init')
+    invalidateCache('/api/profile')
+
+    // Si FTP a changé, réajuster le plan actif
+    if (newFtp && oldFtp !== newFtp) {
+      fetch('/api/plan/on-ftp-change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newFtp }),
+      }).catch(() => {})
+      invalidateCache('/api/plan')
+    }
+
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)

@@ -4,20 +4,25 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { generateTrainingPlan } from '@/lib/claude'
 import { calculatePMC } from '@/lib/training'
-import { subDays } from 'date-fns'
+import { subDays, startOfWeek } from 'date-fns'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-  const { raceId } = await req.json()
+  const { raceId, startDate } = await req.json()
 
   if (!raceId) {
     return NextResponse.json({ error: 'raceId obligatoire' }, { status: 400 })
   }
 
+  // Date de début du plan (lundi de la semaine choisie, ou lundi courant)
+  const planStart = startDate
+    ? startOfWeek(new Date(startDate), { weekStartsOn: 1 })
+    : startOfWeek(new Date(), { weekStartsOn: 1 })
+
   // Récupérer les données nécessaires
-  const [user, race, recentActivities, constraints] = await Promise.all([
+  const [user, race, recentActivities, pmcActivities, constraints] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { id: true, email: true, name: true, height: true, weight: true, ftp: true, stravaId: true, createdAt: true },
@@ -25,18 +30,29 @@ export async function POST(req: Request) {
     prisma.race.findFirst({
       where: { id: raceId, userId: session.user.id },
     }),
+    // Activités récentes depuis la date de début du plan (pour voir ce qui a été fait)
     prisma.activity.findMany({
       where: {
         userId: session.user.id,
-        date: { gte: subDays(new Date(), 60) },
+        date: { gte: subDays(planStart, 60) },
       },
       orderBy: { date: 'desc' },
       take: 40,
     }),
+    // Activités pour le calcul PMC/CTL/ATL (90 jours)
+    prisma.activity.findMany({
+      where: {
+        userId: session.user.id,
+        date: { gte: subDays(new Date(), 90) },
+        tss: { not: null },
+      },
+      orderBy: { date: 'desc' },
+      select: { date: true, tss: true },
+    }),
     prisma.weeklyConstraint.findMany({
       where: {
         userId: session.user.id,
-        weekStart: { gte: new Date() },
+        weekStart: { gte: planStart },
       },
       orderBy: { weekStart: 'asc' },
       take: 12,
@@ -47,9 +63,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Utilisateur ou course introuvable' }, { status: 404 })
   }
 
-  // Calculer CTL/ATL actuels
-  const activitiesForPMC = recentActivities
-    .filter(a => a.tss !== null)
+  // Calculer CTL/ATL actuels (sur 90 jours)
+  const activitiesForPMC = pmcActivities
     .map(a => ({ date: a.date.toISOString(), tss: a.tss! }))
 
   const pmc = calculatePMC(activitiesForPMC, 60)
@@ -63,6 +78,7 @@ export async function POST(req: Request) {
       constraints: constraints.map(c => ({ ...c, weekStart: c.weekStart.toISOString(), createdAt: c.createdAt.toISOString(), updatedAt: c.updatedAt.toISOString() })) as any,
       currentCTL: latestPMC?.ctl,
       currentATL: latestPMC?.atl,
+      startDate: planStart.toISOString(),
     })
 
     // Désactiver les anciens plans pour cette course
