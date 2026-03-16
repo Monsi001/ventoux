@@ -475,7 +475,7 @@ export default function PlanPage() {
                 type="date"
                 value={planStartDate}
                 onChange={e => setPlanStartDate(e.target.value)}
-                className="input text-sm"
+                className="input text-sm [color-scheme:dark]"
               />
             </div>
             <button
@@ -566,6 +566,15 @@ export default function PlanPage() {
               </div>
             </div>
             <GlossaryButton />
+            <div className="flex items-center gap-1">
+              <Calendar size={14} className="text-stone-600 flex-shrink-0" />
+              <input
+                type="date"
+                value={planStartDate}
+                onChange={e => setPlanStartDate(e.target.value)}
+                className="input text-xs py-1 px-2 w-[130px] [color-scheme:dark]"
+              />
+            </div>
             <button
               onClick={generatePlan}
               disabled={generating}
@@ -802,39 +811,168 @@ export default function PlanPage() {
         </>
       )}
 
-      {/* ─── Week overview (bottom) ───────────────────────────────────────────── */}
-      {plan!.weeks && plan!.weeks.length > 1 && (
-        <div className="mt-8">
-          <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Semaines</h2>
-          <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-            {plan!.weeks.map((week: TrainingWeek, i: number) => {
-              const isSelected = i === currentWeekIdx
-              const wkTss = week.sessions?.reduce((sum, s) => sum + (s.tssTarget || 0), 0) || 0
-              const wkHrs = Math.round((week.sessions?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0) / 60 * 10) / 10
+      {/* ─── Historique & volume ─────────────────────────────────────────────── */}
+      {plan!.weeks && plan!.weeks.length > 1 && (() => {
+        const today = new Date()
+        const weeksData = plan!.weeks.map((week: TrainingWeek, i: number) => {
+          const weekStart = new Date(week.weekStart)
+          const weekEnd = addDays(weekStart, 6)
+          const isPast = weekEnd < today
+          const isCurrent = today >= weekStart && today <= weekEnd
 
-              return (
-                <button
-                  key={i}
-                  onClick={() => setCurrentWeekIdx(i)}
-                  className={`flex-shrink-0 w-20 md:flex-1 md:w-auto px-3 py-2.5 rounded-xl text-center transition-all ${
-                    isSelected
-                      ? 'bg-ventoux-500/15 ring-1 ring-ventoux-500/30 text-summit-light'
-                      : 'bg-white/[0.02] text-stone-600 hover:bg-white/[0.04] hover:text-stone-400'
-                  }`}
-                >
-                  <p className={`text-xs font-mono font-bold ${isSelected ? 'text-ventoux-400' : ''}`}>S{week.weekNumber}</p>
-                  <p className="text-[10px] mt-0.5">{wkHrs}h</p>
-                  {week.phase && (
-                    <div className={`mt-1 text-[8px] px-1 py-0.5 rounded ${PHASE_COLORS[week.phase] || ''}`}>
-                      {week.phase}
-                    </div>
-                  )}
-                </button>
-              )
-            })}
+          // Planned
+          const plannedMin = week.sessions?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0
+          const plannedHrs = Math.round(plannedMin / 60 * 10) / 10
+          const plannedTss = week.sessions?.reduce((sum, s) => sum + (s.tssTarget || 0), 0) || 0
+
+          // Actual: activités de cette semaine
+          const weekActivities = activities.filter(a => {
+            const d = new Date(a.date)
+            return d >= weekStart && d <= weekEnd
+          })
+          const actualMin = weekActivities.reduce((sum, a) => sum + (a.duration || 0), 0) / 60 // seconds → minutes
+          const actualHrs = Math.round(actualMin / 60 * 10) / 10
+          const actualTss = weekActivities.reduce((sum, a) => sum + (a.tss || 0), 0)
+
+          // Completion
+          const totalSessions = week.sessions?.length || 0
+          const doneSessions = week.sessions?.filter(s => s.completed).length || 0
+          const completionPct = totalSessions > 0 ? Math.round(doneSessions / totalSessions * 100) : 0
+
+          return { week, i, isPast, isCurrent, plannedHrs, plannedTss, actualHrs, actualTss, doneSessions, totalSessions, completionPct, weekActivities }
+        })
+
+        const maxHrs = Math.max(...weeksData.map(w => Math.max(w.plannedHrs, w.actualHrs)), 1)
+
+        // Monthly aggregation
+        const months = new Map<string, { plannedHrs: number, actualHrs: number, plannedTss: number, actualTss: number, done: number, total: number }>()
+        weeksData.forEach(w => {
+          const monthKey = format(new Date(w.week.weekStart), 'yyyy-MM')
+          const monthLabel = format(new Date(w.week.weekStart), 'MMM yyyy', { locale: fr })
+          if (!months.has(monthKey)) months.set(monthKey, { plannedHrs: 0, actualHrs: 0, plannedTss: 0, actualTss: 0, done: 0, total: 0 })
+          const m = months.get(monthKey)!
+          m.plannedHrs += w.plannedHrs
+          m.actualHrs += w.actualHrs
+          m.plannedTss += w.plannedTss
+          m.actualTss += w.actualTss
+          m.done += w.doneSessions
+          m.total += w.totalSessions
+        })
+
+        return (
+          <div className="mt-8 space-y-6">
+            {/* Weekly volume chart */}
+            <div>
+              <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Volume hebdomadaire</h2>
+              <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 items-end" style={{ minHeight: 140 }}>
+                {weeksData.map(({ week, i, isPast, isCurrent, plannedHrs, actualHrs, completionPct, doneSessions, totalSessions }) => {
+                  const isSelected = i === currentWeekIdx
+                  const barH = Math.max(8, (plannedHrs / maxHrs) * 100)
+                  const actualH = Math.max(0, (actualHrs / maxHrs) * 100)
+                  const hasActual = isPast || isCurrent
+
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentWeekIdx(i)}
+                      className={`flex-shrink-0 w-14 md:flex-1 md:w-auto flex flex-col items-center gap-1 transition-all rounded-lg py-1.5 px-0.5 ${
+                        isSelected
+                          ? 'bg-ventoux-500/15 ring-1 ring-ventoux-500/30'
+                          : 'hover:bg-white/[0.03]'
+                      }`}
+                    >
+                      {/* Bars */}
+                      <div className="relative w-full flex justify-center items-end gap-[2px]" style={{ height: 80 }}>
+                        {/* Planned bar */}
+                        <div
+                          className={`w-3 rounded-t transition-all ${isPast ? 'bg-stone-800' : isCurrent ? 'bg-ventoux-500/30' : 'bg-stone-800/60'}`}
+                          style={{ height: `${barH}%` }}
+                          title={`Prévu: ${plannedHrs}h`}
+                        />
+                        {/* Actual bar */}
+                        {hasActual && (
+                          <div
+                            className={`w-3 rounded-t transition-all ${
+                              actualH >= barH * 0.8 ? 'bg-green-500' : actualH > 0 ? 'bg-amber-500' : 'bg-red-500/40'
+                            }`}
+                            style={{ height: `${Math.max(actualH > 0 ? 4 : 0, actualH)}%` }}
+                            title={`Réalisé: ${actualHrs}h`}
+                          />
+                        )}
+                      </div>
+
+                      {/* Completion badge */}
+                      {hasActual && totalSessions > 0 && (
+                        <div className={`text-[9px] font-medium px-1 rounded ${
+                          completionPct >= 80 ? 'text-green-400' : completionPct > 0 ? 'text-amber-400' : 'text-stone-600'
+                        }`}>
+                          {doneSessions}/{totalSessions}
+                        </div>
+                      )}
+
+                      {/* Labels */}
+                      <p className={`text-[10px] font-mono font-bold ${isSelected ? 'text-ventoux-400' : isCurrent ? 'text-summit-light' : 'text-stone-600'}`}>
+                        S{week.weekNumber}
+                      </p>
+                      <p className={`text-[9px] ${isSelected ? 'text-stone-400' : 'text-stone-700'}`}>{plannedHrs}h</p>
+                      {week.phase && (
+                        <div className={`text-[7px] px-1 py-0.5 rounded leading-none ${PHASE_COLORS[week.phase] || ''}`}>
+                          {week.phase}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {/* Legend */}
+              <div className="flex items-center gap-4 mt-2 text-[10px] text-stone-600">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-stone-800 inline-block" /> Prévu</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500 inline-block" /> Réalisé</span>
+              </div>
+            </div>
+
+            {/* Monthly summary */}
+            {months.size > 1 && (
+              <div>
+                <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Bilan mensuel</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {Array.from(months.entries()).map(([key, m]) => {
+                    const label = format(new Date(key + '-01'), 'MMM yyyy', { locale: fr })
+                    const pct = m.total > 0 ? Math.round(m.done / m.total * 100) : 0
+                    return (
+                      <div key={key} className="bg-white/[0.02] rounded-xl p-3 space-y-2">
+                        <p className="text-xs font-medium text-stone-400 capitalize">{label}</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-display text-lg font-bold text-summit-light">{Math.round(m.actualHrs * 10) / 10}h</span>
+                          <span className="text-[10px] text-stone-600">/ {Math.round(m.plannedHrs * 10) / 10}h</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xs text-summit-light font-medium">{Math.round(m.actualTss)} <span className="text-stone-600">TSS</span></span>
+                          <span className="text-[10px] text-stone-600">/ {Math.round(m.plannedTss)}</span>
+                        </div>
+                        {m.total > 0 && (
+                          <div>
+                            <div className="flex justify-between text-[10px] mb-1">
+                              <span className="text-stone-600">Complétion</span>
+                              <span className={pct >= 80 ? 'text-green-400' : pct > 0 ? 'text-amber-400' : 'text-stone-600'}>{pct}%</span>
+                            </div>
+                            <div className="h-1 rounded-full bg-white/[0.05] overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${pct >= 80 ? 'bg-green-500' : pct > 0 ? 'bg-amber-500' : 'bg-stone-700'}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ─── Session detail slide-over ─────────────────────────────────────────── */}
       {selectedSession && (

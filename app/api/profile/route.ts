@@ -12,6 +12,8 @@ export async function GET() {
     select: { id: true, email: true, name: true, height: true, weight: true, ftp: true, homeLat: true, homeLng: true, homeCity: true, stravaId: true, createdAt: true },
   })
 
+  if (!user) return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
+
   return NextResponse.json(user)
 }
 

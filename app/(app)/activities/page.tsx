@@ -92,9 +92,10 @@ export default function ActivitiesPage() {
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  // Stats semaine
+  // Stats semaine (lundi 00:00)
   const weekStart = new Date()
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
+  weekStart.setHours(0, 0, 0, 0)
   const weekActivities = activities.filter(a => new Date(a.date) >= weekStart)
   const weekTSS = weekActivities.reduce((s, a) => s + (a.tss || 0), 0)
   const weekHours = weekActivities.reduce((s, a) => s + a.duration, 0) / 3600

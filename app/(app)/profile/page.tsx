@@ -41,6 +41,7 @@ export default function ProfilePage() {
 
   async function loadProfile() {
     const res = await fetch('/api/profile')
+    if (!res.ok) return
     const data = await res.json()
     setProfile(data)
     setForm({
