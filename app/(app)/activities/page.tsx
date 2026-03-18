@@ -1,8 +1,8 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle } from 'lucide-react'
+import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle, Pencil } from 'lucide-react'
 import type { Activity as ActivityType } from '@/types'
 import { formatDuration } from '@/lib/training'
 import { cachedFetch } from '@/lib/fetch-cache'
@@ -91,6 +91,10 @@ export default function ActivitiesPage() {
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
   }
+
+  const handleTssUpdate = useCallback((id: string, tss: number | null) => {
+    setActivities(prev => prev.map(a => a.id === id ? { ...a, tss } : a))
+  }, [])
 
   // Stats semaine (lundi 00:00)
   const weekStart = new Date()
@@ -189,7 +193,7 @@ export default function ActivitiesPage() {
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {activities.map(activity => (
-              <ActivityRow key={activity.id} activity={activity} />
+              <ActivityRow key={activity.id} activity={activity} onTssUpdate={handleTssUpdate} />
             ))}
           </div>
         )}
@@ -198,9 +202,35 @@ export default function ActivitiesPage() {
   )
 }
 
-function ActivityRow({ activity }: { activity: ActivityType }) {
+function ActivityRow({ activity, onTssUpdate }: { activity: ActivityType; onTssUpdate: (id: string, tss: number | null) => void }) {
   const src = SOURCE_LABELS[activity.source]
   const Icon = TYPE_ICONS[activity.type] || Activity
+  const [editingTss, setEditingTss] = useState(false)
+  const [tssValue, setTssValue] = useState('')
+  const [saving, setSaving] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function saveTss() {
+    const val = tssValue.trim() === '' ? null : Math.round(Number(tssValue))
+    if (val !== null && (isNaN(val) || val < 0 || val > 1000)) return
+    setSaving(true)
+    const res = await fetch(`/api/activities/${activity.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tss: val }),
+    })
+    if (res.ok) {
+      onTssUpdate(activity.id, val)
+    }
+    setSaving(false)
+    setEditingTss(false)
+  }
+
+  function openEdit() {
+    setTssValue(activity.tss ? Math.round(activity.tss).toString() : '')
+    setEditingTss(true)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
 
   return (
     <div className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors">
@@ -227,7 +257,38 @@ function ActivityRow({ activity }: { activity: ActivityType }) {
         {activity.distance && <Metric label="Distance" value={`${activity.distance.toFixed(1)} km`} />}
         {activity.elevation && <Metric label="D+" value={`${activity.elevation} m`} />}
         {activity.avgPower && <Metric label="Puissance" value={`${activity.avgPower} W`} />}
-        {activity.tss && <Metric label="TSS" value={Math.round(activity.tss).toString()} highlight />}
+        {editingTss ? (
+          <div className="text-center">
+            <div className="flex items-center gap-1">
+              <input
+                ref={inputRef}
+                type="number"
+                min="0"
+                max="1000"
+                value={tssValue}
+                onChange={e => setTssValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveTss(); if (e.key === 'Escape') setEditingTss(false) }}
+                onBlur={saveTss}
+                disabled={saving}
+                className="w-14 bg-white/[0.06] border border-ventoux-400/40 rounded px-1.5 py-0.5 text-sm text-ventoux-400 font-mono text-center focus:outline-none focus:border-ventoux-400"
+                placeholder="0"
+              />
+            </div>
+            <p className="text-stone-600 text-[10px] uppercase tracking-widest">TSS</p>
+          </div>
+        ) : activity.tss ? (
+          <button onClick={openEdit} className="text-center group cursor-pointer" title="Modifier le TSS">
+            <p className="font-mono text-sm text-ventoux-400 font-semibold group-hover:underline">{Math.round(activity.tss)}</p>
+            <p className="text-stone-600 text-[10px] uppercase tracking-widest">TSS</p>
+          </button>
+        ) : (
+          <button onClick={openEdit} className="text-center group cursor-pointer" title="Ajouter un TSS">
+            <p className="font-mono text-sm text-stone-600 group-hover:text-ventoux-400 transition-colors flex items-center gap-1">
+              <Pencil size={11} />TSS
+            </p>
+            <p className="text-stone-700 text-[10px] uppercase tracking-widest">Ajouter</p>
+          </button>
+        )}
       </div>
     </div>
   )

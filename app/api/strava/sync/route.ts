@@ -46,6 +46,8 @@ export async function POST() {
     let tss: number | null = null
     if (mapped.normalizedPower && user.ftp) {
       tss = calculateTSS(mapped.duration, mapped.normalizedPower, user.ftp)
+    } else if (mapped.avgPower && user.ftp) {
+      tss = calculateTSS(mapped.duration, mapped.avgPower, user.ftp)
     }
 
     try {
