@@ -34,6 +34,14 @@ export async function GET(req: Request) {
       where: { userId: session.user.id },
       orderBy: { date: 'desc' },
       take: activityLimit,
+      select: {
+        id: true, userId: true, source: true, stravaId: true, type: true,
+        name: true, date: true, duration: true, distance: true, elevation: true,
+        avgPower: true, maxPower: true, avgHr: true, maxHr: true, avgSpeed: true,
+        tss: true, normalizedPower: true, intensityFactor: true, calories: true,
+        notes: true, createdAt: true,
+        // Exclut gpxData, fitData, rawData (trop lourds)
+      },
     })
   }
 

@@ -63,7 +63,7 @@ export async function POST() {
           maxHr: mapped.maxHr,
           avgSpeed: mapped.avgSpeed,
           normalizedPower: mapped.normalizedPower,
-          tss: tss ?? mapped.tss,
+          tss: tss ?? undefined,
           name: mapped.name,
         },
         create: { ...mapped, tss },

@@ -6,7 +6,7 @@ import {
   Activity, ChevronRight, RefreshCw, AlertTriangle
 } from 'lucide-react'
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, ReferenceLine
 } from 'recharts'
 import { calculatePMC, estimateVentouxTime, formatMinutes } from '@/lib/training'
@@ -69,6 +69,10 @@ export default function DashboardPage() {
 
   const { user, race, activePlan, recentActivities, weekActivities } = data
 
+  // Stats semaine
+  const weekTss = weekActivities.reduce((s, a) => s + (a.tss || 0), 0)
+  const weekHours = Math.round(weekActivities.reduce((s, a) => s + a.duration, 0) / 3600 * 10) / 10
+
   // Calcul PMC
   const activitiesForPMC = recentActivities
     .filter(a => a.tss !== null)
@@ -124,7 +128,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard
           label="FTP"
           value={user.ftp ? `${user.ftp} W` : '—'}
@@ -133,11 +137,25 @@ export default function DashboardPage() {
           color="ventoux"
         />
         <StatCard
+          label="TSS semaine"
+          value={weekTss > 0 ? Math.round(weekTss).toString() : '—'}
+          sub={`${weekHours}h · ${weekActivities.length} séance${weekActivities.length > 1 ? 's' : ''}`}
+          icon={<Clock size={16} />}
+          color="ventoux"
+        />
+        <StatCard
           label="Fitness (CTL)"
           value={latest ? Math.round(latest.ctl).toString() : '—'}
           sub="Charge chronique"
           icon={<TrendingUp size={16} />}
           color={latest?.ctl > 60 ? 'green' : 'yellow'}
+        />
+        <StatCard
+          label="Fatigue (ATL)"
+          value={latest ? Math.round(latest.atl).toString() : '—'}
+          sub="Charge aiguë"
+          icon={<Activity size={16} />}
+          color={latest?.atl > (latest?.ctl || 0) * 1.3 ? 'red' : 'yellow'}
         />
         <StatCard
           label="Forme (TSB)"
@@ -161,10 +179,11 @@ export default function DashboardPage() {
         <div className="md:col-span-2 card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="section-title text-base">Performance Management</h2>
-            <div className="flex items-center gap-4 text-xs text-stone-500">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 bg-blue-400 inline-block rounded" />CTL</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 bg-red-400 inline-block rounded" />ATL</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 bg-ventoux-500 inline-block rounded" />TSB</span>
+            <div className="flex items-center gap-3 text-xs text-stone-500">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 bg-white/10 inline-block rounded-sm" />TSS</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-blue-400 inline-block rounded" />CTL</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-red-400 inline-block rounded" />ATL</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-ventoux-500 inline-block rounded" />TSB</span>
             </div>
           </div>
           <PMCChart data={pmc.slice(-42)} />
@@ -251,7 +270,7 @@ function StatCard({ label, value, sub, icon, color }: {
 function PMCChart({ data }: { data: any[] }) {
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+      <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
         <XAxis
           dataKey="date"
@@ -261,16 +280,18 @@ function PMCChart({ data }: { data: any[] }) {
           tickLine={false}
           interval={13}
         />
-        <YAxis tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} />
-        <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" />
+        <YAxis yAxisId="left" tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} />
+        <YAxis yAxisId="right" orientation="right" tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} hide />
+        <ReferenceLine yAxisId="left" y={0} stroke="rgba(255,255,255,0.1)" />
         <Tooltip
           contentStyle={{ background: '#141312', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: 12 }}
           labelFormatter={d => format(new Date(d), 'dd MMM', { locale: fr })}
         />
-        <Line dataKey="ctl" stroke="#60A5FA" strokeWidth={2} dot={false} name="CTL (fitness)" />
-        <Line dataKey="atl" stroke="#F87171" strokeWidth={2} dot={false} name="ATL (fatigue)" />
-        <Line dataKey="tsb" stroke="#FF6B35" strokeWidth={2} dot={false} name="TSB (forme)" />
-      </LineChart>
+        <Bar dataKey="tss" yAxisId="right" fill="rgba(255,255,255,0.08)" radius={[2, 2, 0, 0]} name="TSS" />
+        <Line dataKey="ctl" yAxisId="left" stroke="#60A5FA" strokeWidth={2} dot={false} name="CTL (fitness)" />
+        <Line dataKey="atl" yAxisId="left" stroke="#F87171" strokeWidth={2} dot={false} name="ATL (fatigue)" />
+        <Line dataKey="tsb" yAxisId="left" stroke="#FF6B35" strokeWidth={2} dot={false} name="TSB (forme)" />
+      </ComposedChart>
     </ResponsiveContainer>
   )
 }

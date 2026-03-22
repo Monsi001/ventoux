@@ -47,19 +47,32 @@ export async function generateTrainingPlan(input: GeneratePlanInput): Promise<{
     ? Math.round(pastActivities.reduce((sum, a) => sum + a.duration, 0) / 3600 / Math.max(1, Math.ceil(pastActivities.length / 3)) * 10) / 10
     : 0
 
-  // Les 2 semaines à générer = semaine courante + semaine prochaine
-  const weekStartCurrent = format(currentMonday, 'yyyy-MM-dd')
-  const weekStartNext = format(addWeeks(currentMonday, 1), 'yyyy-MM-dd')
+  // 4 semaines à générer = semaine courante + 3 suivantes
+  const NUM_WEEKS = Math.min(4, weeksRemaining)
+  const weekStarts = Array.from({ length: NUM_WEEKS }, (_, i) => ({
+    num: currentWeekNumber + i,
+    start: format(addWeeks(currentMonday, i), 'yyyy-MM-dd'),
+  }))
+  const weeksListStr = weekStarts.map(w => `S${w.num} (début ${w.start})`).join(', ')
+
+  // Semaines avec test FTP (toutes les 2 semaines en partant de S2)
+  const ftpTestWeeks = weekStarts
+    .filter(w => w.num % 2 === 0)
+    .map(w => `S${w.num}`)
+  const ftpTestStr = ftpTestWeeks.length > 0
+    ? `OBLIGATOIRE: En semaine${ftpTestWeeks.length > 1 ? 's' : ''} ${ftpTestWeeks.join(' et ')}, une des 2 séances vélo DOIT être un test FTP: type THRESHOLD, name "Test FTP", description "TEST FTP: échauffement 15min, 20min all-out, récup 10min", duration 50, tssTarget 70, intensityZone 4. Planifier en début de semaine (MAR ou MER).`
+    : ''
 
   const prompt = `Entraîneur cycliste. Profil: ${user.weight || '?'}kg, FTP ${user.ftp || '?'}W${user.ftp && user.weight ? ` (${(user.ftp / user.weight).toFixed(1)}W/kg)` : ''}, CTL ${currentCTL}, ATL ${currentATL}.
 Course: ${race.name}, ${format(raceDate, 'dd/MM/yyyy')}, ${race.distance}km, ${race.elevation}m D+.
 Plan total: ${totalWeeks} semaines (début ${format(planStart, 'dd/MM/yyyy')}). On est en semaine ${currentWeekNumber}/${totalWeeks}, il reste ${weeksRemaining} semaines.
 Volume récent: ~${weeklyHours}h/sem. Activités récentes: ${activitySummary || 'aucune'}.
-Adapte la phase et l'intensité au fait qu'on est en semaine ${currentWeekNumber} du plan.
-Génère TOUTES les phases (du début à la fin du plan) et les séances de la SEMAINE COURANTE (S${currentWeekNumber}, début ${weekStartCurrent}) et la SEMAINE SUIVANTE (S${currentWeekNumber + 1}, début ${weekStartNext}). CHAQUE semaine: 2 séances vélo + 1 séance STRENGTH. JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Descriptions vélo: 5 mots max. STRENGTH: exercices détaillés (nom, séries x reps, repos).
+Adapte la phase et l'intensité au fait qu'on est en semaine ${currentWeekNumber} du plan. Assure une progression de charge cohérente sur les 4 semaines (3 semaines montée + 1 semaine récup si pertinent).
+Génère TOUTES les phases (du début à la fin du plan) et les séances des ${NUM_WEEKS} SEMAINES suivantes: ${weeksListStr}. CHAQUE semaine: 2 séances vélo + 1 séance STRENGTH. JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Descriptions vélo: 5 mots max. STRENGTH: exercices détaillés (nom, séries x reps, repos).
 Types vélo: ENDURANCE, TEMPO, THRESHOLD, VO2MAX, SWEET_SPOT, RECOVERY, LONG_RIDE, RACE_SIM.
+${ftpTestStr}
 JSON compact, format EXACT:
-{"phases":[{"name":"Base","type":"BASE","startWeek":1,"endWeek":4,"description":"...","weeklyHoursTarget":6}],"weeks":[{"weekNumber":${currentWeekNumber},"weekStart":"${weekStartCurrent}","phase":"BUILD","totalHours":5,"totalTss":200,"notes":"...","sessions":[{"id":"w${currentWeekNumber}-s1","day":"TUE","type":"ENDURANCE","name":"Z2","duration":60,"description":"Z2 strict","tssTarget":45,"intensityZone":2,"indoor":true},{"id":"w${currentWeekNumber}-s2","day":"THU","type":"STRENGTH","name":"Renfo jambes","duration":40,"description":"Squats 4x12, Fentes 3x10/j (60s repos), Gainage planche 3x45s, Pont fessier 3x20, Extensions lombaires 3x15","tssTarget":0,"intensityZone":1,"indoor":true}]}],"aiNotes":"..."}`
+{"phases":[{"name":"Base","type":"BASE","startWeek":1,"endWeek":4,"description":"...","weeklyHoursTarget":6}],"weeks":[{"weekNumber":${weekStarts[0].num},"weekStart":"${weekStarts[0].start}","phase":"BUILD","totalHours":5,"totalTss":200,"notes":"...","sessions":[{"id":"w${weekStarts[0].num}-s1","day":"TUE","type":"ENDURANCE","name":"Z2","duration":60,"description":"Z2 strict","tssTarget":45,"intensityZone":2,"indoor":true},{"id":"w${weekStarts[0].num}-s2","day":"THU","type":"STRENGTH","name":"Renfo jambes","duration":40,"description":"Squats 4x12, Fentes 3x10/j (60s repos), Gainage planche 3x45s, Pont fessier 3x20, Extensions lombaires 3x15","tssTarget":0,"intensityZone":1,"indoor":true}]}],"aiNotes":"..."}`
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',

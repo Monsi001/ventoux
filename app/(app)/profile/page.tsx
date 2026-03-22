@@ -103,12 +103,12 @@ export default function ProfilePage() {
     loadConstraints()
   }
 
-  const ventouxEstimate = profile?.weight && profile?.ftp
-    ? estimateVentouxTime(profile.weight, profile.ftp)
-    : null
-
   const ftpNum = parseInt(form.ftp) || 0
   const weightNum = parseFloat(form.weight) || 0
+
+  const ventouxEstimate = weightNum > 0 && ftpNum > 0
+    ? estimateVentouxTime(weightNum, ftpNum)
+    : null
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-in">

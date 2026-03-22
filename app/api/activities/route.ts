@@ -21,6 +21,13 @@ export async function GET(req: Request) {
     orderBy: { date: 'desc' },
     take: limit,
     skip: offset,
+    select: {
+      id: true, userId: true, source: true, stravaId: true, type: true,
+      name: true, date: true, duration: true, distance: true, elevation: true,
+      avgPower: true, maxPower: true, avgHr: true, maxHr: true, avgSpeed: true,
+      tss: true, normalizedPower: true, intensityFactor: true, calories: true,
+      notes: true, createdAt: true,
+    },
   })
 
   return NextResponse.json(activities)

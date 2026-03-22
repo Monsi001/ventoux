@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle, Pencil } from 'lucide-react'
+import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle, Pencil, Trash2 } from 'lucide-react'
 import type { Activity as ActivityType } from '@/types'
 import { formatDuration } from '@/lib/training'
 import { cachedFetch } from '@/lib/fetch-cache'
@@ -193,7 +193,7 @@ export default function ActivitiesPage() {
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {activities.map(activity => (
-              <ActivityRow key={activity.id} activity={activity} onTssUpdate={handleTssUpdate} />
+              <ActivityRow key={activity.id} activity={activity} onTssUpdate={handleTssUpdate} onDelete={(id) => setActivities(prev => prev.filter(a => a.id !== id))} />
             ))}
           </div>
         )}
@@ -202,13 +202,24 @@ export default function ActivitiesPage() {
   )
 }
 
-function ActivityRow({ activity, onTssUpdate }: { activity: ActivityType; onTssUpdate: (id: string, tss: number | null) => void }) {
+function ActivityRow({ activity, onTssUpdate, onDelete }: { activity: ActivityType; onTssUpdate: (id: string, tss: number | null) => void; onDelete: (id: string) => void }) {
   const src = SOURCE_LABELS[activity.source]
   const Icon = TYPE_ICONS[activity.type] || Activity
   const [editingTss, setEditingTss] = useState(false)
   const [tssValue, setTssValue] = useState('')
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  async function handleDelete() {
+    if (!confirm(`Supprimer « ${activity.name} » ?`)) return
+    setDeleting(true)
+    const res = await fetch(`/api/activities/${activity.id}`, { method: 'DELETE' })
+    if (res.ok) {
+      onDelete(activity.id)
+    }
+    setDeleting(false)
+  }
 
   async function saveTss() {
     const val = tssValue.trim() === '' ? null : Math.round(Number(tssValue))
@@ -290,6 +301,15 @@ function ActivityRow({ activity, onTssUpdate }: { activity: ActivityType; onTssU
           </button>
         )}
       </div>
+
+      <button
+        onClick={handleDelete}
+        disabled={deleting}
+        className="flex-shrink-0 p-2 rounded-lg text-stone-500 hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-60 hover:opacity-100"
+        title="Supprimer"
+      >
+        {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+      </button>
     </div>
   )
 }

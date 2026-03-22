@@ -4,7 +4,7 @@ import { format, addDays, startOfWeek, differenceInDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Sparkles, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info, Mountain, X, Dumbbell, Bike, Check, Calendar, Play, Pause, SkipForward, RotateCcw, Trash2, Sun, Cloud, MapPin, Download, Train, Wind, Thermometer } from 'lucide-react'
 import type { TrainingPlan, TrainingWeek, TrainingSession, Race, UserProfile, Activity } from '@/types'
-import { formatMinutes } from '@/lib/training'
+import { formatMinutes, calculatePMC } from '@/lib/training'
 import { GlossaryButton, Term } from '@/components/ui/Tooltip'
 import { cachedFetch, invalidateCache } from '@/lib/fetch-cache'
 
@@ -445,6 +445,22 @@ export default function PlanPage() {
   const weekTotalHours = Math.round(weekTotalMinutes / 60 * 10) / 10
   const weekTotalTss = currentWeek?.sessions?.reduce((sum, s) => sum + (s.tssTarget || 0), 0) || 0
 
+  // Actual week stats from activities
+  const currentWeekStart = currentWeek ? new Date(currentWeek.weekStart) : null
+  const currentWeekEnd = currentWeekStart ? addDays(currentWeekStart, 6) : null
+  const currentWeekActivities = currentWeekStart && currentWeekEnd
+    ? activities.filter(a => { const d = new Date(a.date); return d >= currentWeekStart && d <= currentWeekEnd })
+    : []
+  const actualWeekHours = Math.round(currentWeekActivities.reduce((s, a) => s + a.duration, 0) / 3600 * 10) / 10
+  const actualWeekTss = Math.round(currentWeekActivities.reduce((s, a) => s + (a.tss || 0), 0))
+
+  // PMC (CTL / ATL / TSB)
+  const pmcData = calculatePMC(
+    activities.filter(a => a.tss != null).map(a => ({ date: a.date, tss: a.tss! })),
+    90
+  )
+  const latestPmc = pmcData.length > 0 ? pmcData[pmcData.length - 1] : null
+
   // ─── No plan state ──────────────────────────────────────────────────────────
   if (!plan && !generating) return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4">
@@ -555,13 +571,19 @@ export default function PlanPage() {
 
           {/* Right: stats + actions */}
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-4 text-right">
+            <div className="hidden sm:flex items-center gap-5 text-right">
               <div>
-                <p className="font-display text-lg font-bold text-summit-light">{weekTotalHours}h</p>
+                <p className="font-display text-lg font-bold text-summit-light">
+                  {actualWeekHours > 0 ? `${actualWeekHours}` : '—'}
+                  <span className="text-stone-600 text-xs font-normal"> / {weekTotalHours}h</span>
+                </p>
                 <p className="text-stone-600 text-[10px] uppercase tracking-widest">Volume</p>
               </div>
               <div>
-                <p className="font-display text-lg font-bold text-summit-light">{weekTotalTss}</p>
+                <p className="font-display text-lg font-bold text-summit-light">
+                  {actualWeekTss > 0 ? actualWeekTss : '—'}
+                  <span className="text-stone-600 text-xs font-normal"> / {weekTotalTss}</span>
+                </p>
                 <p className="text-stone-600 text-[10px] uppercase tracking-widest"><Term term="TSS">TSS</Term></p>
               </div>
             </div>
@@ -595,9 +617,9 @@ export default function PlanPage() {
 
         {/* Mobile stats row */}
         <div className="flex sm:hidden items-center gap-3 mt-2 text-xs text-stone-500">
-          <span className="font-display font-bold text-summit-light">{weekTotalHours}h</span>
+          <span className="font-display font-bold text-summit-light">{actualWeekHours > 0 ? actualWeekHours : '—'}<span className="text-stone-600 font-normal">/{weekTotalHours}h</span></span>
           <span>·</span>
-          <span><Term term="TSS">TSS {weekTotalTss}</Term></span>
+          <span><Term term="TSS">TSS {actualWeekTss > 0 ? actualWeekTss : '—'}/{weekTotalTss}</Term></span>
           <span>·</span>
           <span>{currentWeek?.sessions?.length || 0} séances</span>
         </div>
@@ -657,6 +679,36 @@ export default function PlanPage() {
           </div>
         )
       })()}
+
+      {/* Training Load (CTL / ATL / TSB) */}
+      {latestPmc && (
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-white/[0.02] rounded-xl p-3 text-center">
+            <p className={`font-display text-2xl font-bold ${latestPmc.ctl > 60 ? 'text-green-400' : latestPmc.ctl > 30 ? 'text-amber-400' : 'text-stone-300'}`}>
+              {Math.round(latestPmc.ctl)}
+            </p>
+            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+              <Term term="CTL">CTL</Term> · Fitness
+            </p>
+          </div>
+          <div className="bg-white/[0.02] rounded-xl p-3 text-center">
+            <p className={`font-display text-2xl font-bold ${latestPmc.atl > latestPmc.ctl * 1.3 ? 'text-red-400' : 'text-stone-300'}`}>
+              {Math.round(latestPmc.atl)}
+            </p>
+            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+              <Term term="ATL">ATL</Term> · Fatigue
+            </p>
+          </div>
+          <div className="bg-white/[0.02] rounded-xl p-3 text-center">
+            <p className={`font-display text-2xl font-bold ${latestPmc.tsb > 5 ? 'text-green-400' : latestPmc.tsb < -20 ? 'text-red-400' : 'text-amber-400'}`}>
+              {latestPmc.tsb > 0 ? '+' : ''}{Math.round(latestPmc.tsb)}
+            </p>
+            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+              <Term term="TSB">TSB</Term> · {latestPmc.tsb > 5 ? 'Reposé' : latestPmc.tsb < -20 ? 'Fatigué' : 'Forme'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* AI Notes */}
       {plan!.aiNotes && (
@@ -825,13 +877,12 @@ export default function PlanPage() {
           const plannedHrs = Math.round(plannedMin / 60 * 10) / 10
           const plannedTss = week.sessions?.reduce((sum, s) => sum + (s.tssTarget || 0), 0) || 0
 
-          // Actual: activités de cette semaine
+          // Actual: activités de cette semaine (duration en secondes)
           const weekActivities = activities.filter(a => {
             const d = new Date(a.date)
             return d >= weekStart && d <= weekEnd
           })
-          const actualMin = weekActivities.reduce((sum, a) => sum + (a.duration || 0), 0) / 60 // seconds → minutes
-          const actualHrs = Math.round(actualMin / 60 * 10) / 10
+          const actualHrs = Math.round(weekActivities.reduce((sum, a) => sum + (a.duration || 0), 0) / 3600 * 10) / 10
           const actualTss = weekActivities.reduce((sum, a) => sum + (a.tss || 0), 0)
 
           // Completion
@@ -844,20 +895,31 @@ export default function PlanPage() {
 
         const maxHrs = Math.max(...weeksData.map(w => Math.max(w.plannedHrs, w.actualHrs)), 1)
 
-        // Monthly aggregation
+        // Monthly aggregation — basé sur toutes les activités, pas seulement les semaines du plan
         const months = new Map<string, { plannedHrs: number, actualHrs: number, plannedTss: number, actualTss: number, done: number, total: number }>()
+
+        // Planned: depuis les semaines du plan
         weeksData.forEach(w => {
           const monthKey = format(new Date(w.week.weekStart), 'yyyy-MM')
-          const monthLabel = format(new Date(w.week.weekStart), 'MMM yyyy', { locale: fr })
           if (!months.has(monthKey)) months.set(monthKey, { plannedHrs: 0, actualHrs: 0, plannedTss: 0, actualTss: 0, done: 0, total: 0 })
           const m = months.get(monthKey)!
           m.plannedHrs += w.plannedHrs
-          m.actualHrs += w.actualHrs
           m.plannedTss += w.plannedTss
-          m.actualTss += w.actualTss
           m.done += w.doneSessions
           m.total += w.totalSessions
         })
+
+        // Actual: depuis toutes les activités réelles du mois
+        activities.forEach(a => {
+          const monthKey = format(new Date(a.date), 'yyyy-MM')
+          if (!months.has(monthKey)) months.set(monthKey, { plannedHrs: 0, actualHrs: 0, plannedTss: 0, actualTss: 0, done: 0, total: 0 })
+          const m = months.get(monthKey)!
+          m.actualHrs += a.duration / 3600
+          m.actualTss += a.tss || 0
+        })
+
+        // Arrondir les heures réelles
+        months.forEach(m => { m.actualHrs = Math.round(m.actualHrs * 10) / 10 })
 
         return (
           <div className="mt-8 space-y-6">
@@ -865,7 +927,7 @@ export default function PlanPage() {
             <div>
               <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Volume hebdomadaire</h2>
               <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 items-end" style={{ minHeight: 140 }}>
-                {weeksData.map(({ week, i, isPast, isCurrent, plannedHrs, actualHrs, completionPct, doneSessions, totalSessions }) => {
+                {weeksData.map(({ week, i, isPast, isCurrent, plannedHrs, plannedTss, actualHrs, actualTss, completionPct, doneSessions, totalSessions }) => {
                   const isSelected = i === currentWeekIdx
                   const barH = Math.max(8, (plannedHrs / maxHrs) * 100)
                   const actualH = Math.max(0, (actualHrs / maxHrs) * 100)
@@ -915,6 +977,9 @@ export default function PlanPage() {
                         S{week.weekNumber}
                       </p>
                       <p className={`text-[9px] ${isSelected ? 'text-stone-400' : 'text-stone-700'}`}>{plannedHrs}h</p>
+                      <p className={`text-[8px] font-mono ${hasActual && actualTss > 0 ? (actualTss >= plannedTss * 0.8 ? 'text-green-500/70' : 'text-amber-500/70') : 'text-stone-700'}`}>
+                        {hasActual && actualTss > 0 ? `${Math.round(actualTss)}` : plannedTss > 0 ? `${Math.round(plannedTss)}` : ''}{(hasActual && actualTss > 0) || plannedTss > 0 ? ' TSS' : ''}
+                      </p>
                       {week.phase && (
                         <div className={`text-[7px] px-1 py-0.5 rounded leading-none ${PHASE_COLORS[week.phase] || ''}`}>
                           {week.phase}
