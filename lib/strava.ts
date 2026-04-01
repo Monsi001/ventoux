@@ -103,6 +103,20 @@ export async function getAllStravaActivities(
 }
 
 /**
+ * Récupère une activité Strava par son ID
+ */
+export async function getStravaActivityById(
+  accessToken: string,
+  activityId: string | number
+): Promise<StravaActivity> {
+  const res = await fetch(`${STRAVA_API}/activities/${activityId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) throw new Error(`Strava API error: ${res.status}`)
+  return res.json()
+}
+
+/**
  * Convertit une activité Strava vers notre format Activity
  */
 export function stravaToActivity(s: StravaActivity, userId: string) {

@@ -60,7 +60,7 @@ export async function generateTrainingPlan(input: GeneratePlanInput): Promise<{
     .filter(w => w.num % 2 === 0)
     .map(w => `S${w.num}`)
   const ftpTestStr = ftpTestWeeks.length > 0
-    ? `OBLIGATOIRE: En semaine${ftpTestWeeks.length > 1 ? 's' : ''} ${ftpTestWeeks.join(' et ')}, une des 2 séances vélo DOIT être un test FTP: type THRESHOLD, name "Test FTP", description "TEST FTP: échauffement 15min, 20min all-out, récup 10min", duration 50, tssTarget 70, intensityZone 4. Planifier en début de semaine (MAR ou MER).`
+    ? `OBLIGATOIRE: En semaine${ftpTestWeeks.length > 1 ? 's' : ''} ${ftpTestWeeks.join(' et ')}, une des 3 séances vélo DOIT être un test FTP: type THRESHOLD, name "Test FTP", description "TEST FTP: échauffement 15min, 20min all-out, récup 10min", duration 50, tssTarget 70, intensityZone 4. Planifier en début de semaine (MAR ou MER).`
     : ''
 
   const prompt = `Entraîneur cycliste. Profil: ${user.weight || '?'}kg, FTP ${user.ftp || '?'}W${user.ftp && user.weight ? ` (${(user.ftp / user.weight).toFixed(1)}W/kg)` : ''}, CTL ${currentCTL}, ATL ${currentATL}.
@@ -68,11 +68,11 @@ Course: ${race.name}, ${format(raceDate, 'dd/MM/yyyy')}, ${race.distance}km, ${r
 Plan total: ${totalWeeks} semaines (début ${format(planStart, 'dd/MM/yyyy')}). On est en semaine ${currentWeekNumber}/${totalWeeks}, il reste ${weeksRemaining} semaines.
 Volume récent: ~${weeklyHours}h/sem. Activités récentes: ${activitySummary || 'aucune'}.
 Adapte la phase et l'intensité au fait qu'on est en semaine ${currentWeekNumber} du plan. Assure une progression de charge cohérente sur les 4 semaines (3 semaines montée + 1 semaine récup si pertinent).
-Génère TOUTES les phases (du début à la fin du plan) et les séances des ${NUM_WEEKS} SEMAINES suivantes: ${weeksListStr}. CHAQUE semaine: 2 séances vélo + 1 séance STRENGTH. JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Descriptions vélo: 5 mots max. STRENGTH: exercices détaillés (nom, séries x reps, repos).
+Génère TOUTES les phases (du début à la fin du plan) et les séances des ${NUM_WEEKS} SEMAINES suivantes: ${weeksListStr}. CHAQUE semaine: 3 séances vélo + 1 séance STRENGTH = 4 séances total. Répartition type: 1 intensité (THRESHOLD/VO2MAX/SWEET_SPOT), 1 endurance (ENDURANCE/TEMPO/LONG_RIDE), 1 récup ou endurance courte. JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Descriptions vélo: 5 mots max. STRENGTH: exercices détaillés (nom, séries x reps, repos).
 Types vélo: ENDURANCE, TEMPO, THRESHOLD, VO2MAX, SWEET_SPOT, RECOVERY, LONG_RIDE, RACE_SIM.
 ${ftpTestStr}
 JSON compact, format EXACT:
-{"phases":[{"name":"Base","type":"BASE","startWeek":1,"endWeek":4,"description":"...","weeklyHoursTarget":6}],"weeks":[{"weekNumber":${weekStarts[0].num},"weekStart":"${weekStarts[0].start}","phase":"BUILD","totalHours":5,"totalTss":200,"notes":"...","sessions":[{"id":"w${weekStarts[0].num}-s1","day":"TUE","type":"ENDURANCE","name":"Z2","duration":60,"description":"Z2 strict","tssTarget":45,"intensityZone":2,"indoor":true},{"id":"w${weekStarts[0].num}-s2","day":"THU","type":"STRENGTH","name":"Renfo jambes","duration":40,"description":"Squats 4x12, Fentes 3x10/j (60s repos), Gainage planche 3x45s, Pont fessier 3x20, Extensions lombaires 3x15","tssTarget":0,"intensityZone":1,"indoor":true}]}],"aiNotes":"..."}`
+{"phases":[{"name":"Base","type":"BASE","startWeek":1,"endWeek":4,"description":"...","weeklyHoursTarget":8}],"weeks":[{"weekNumber":${weekStarts[0].num},"weekStart":"${weekStarts[0].start}","phase":"BUILD","totalHours":6,"totalTss":300,"notes":"...","sessions":[{"id":"w${weekStarts[0].num}-s1","day":"TUE","type":"THRESHOLD","name":"Seuil","duration":60,"description":"2x20min au seuil","tssTarget":75,"intensityZone":4,"indoor":true},{"id":"w${weekStarts[0].num}-s2","day":"WED","type":"STRENGTH","name":"Renfo jambes","duration":40,"description":"Squats 4x12, Fentes 3x10/j (60s repos), Gainage planche 3x45s, Pont fessier 3x20, Extensions lombaires 3x15","tssTarget":0,"intensityZone":1,"indoor":true},{"id":"w${weekStarts[0].num}-s3","day":"THU","type":"ENDURANCE","name":"Z2","duration":75,"description":"Z2 cadence haute","tssTarget":55,"intensityZone":2,"indoor":true},{"id":"w${weekStarts[0].num}-s4","day":"SAT","type":"SWEET_SPOT","name":"Sweet spot","duration":90,"description":"3x15min sweet spot","tssTarget":85,"intensityZone":3,"indoor":true}]}],"aiNotes":"..."}`
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
@@ -242,7 +242,7 @@ export async function readjustAfterChange(input: ReadjustInput): Promise<{
 L'athlète a modifié la séance "${changedSessionId}": ${changeDescription}.
 Ajuste l'INTENSITÉ, la DURÉE ou le TYPE des AUTRES séances si nécessaire pour garder un plan cohérent.
 INTERDIT: NE CHANGE PAS le jour (day) des séances. NE CHANGE PAS la séance "${changedSessionId}". Garde les mêmes id, mêmes jours.
-Règles: JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Pas 2 intenses consécutives, repos min 1j après VO2MAX/THRESHOLD. STRENGTH: exercices détaillés (nom, séries x reps, repos). Si aucun ajustement nécessaire, renvoie les semaines telles quelles.
+Règles: 3 séances vélo + 1 STRENGTH par semaine. JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Pas 2 intenses consécutives, repos min 1j après VO2MAX/THRESHOLD. STRENGTH: exercices détaillés (nom, séries x reps, repos). Si aucun ajustement nécessaire, renvoie les semaines telles quelles.
 Semaines:
 ${JSON.stringify(weeksSummary)}
 JSON: {"weeks":[même structure, mêmes jours],"explanation":"1-2 phrases"}`
