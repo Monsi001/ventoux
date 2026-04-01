@@ -268,8 +268,16 @@ function StatCard({ label, value, sub, icon, color }: {
 }
 
 function PMCChart({ data }: { data: any[] }) {
+  // Calculer le domaine serré pour mieux voir les progressions lentes
+  const allValues = data.flatMap(d => [d.ctl, d.atl, d.tsb].filter(v => v != null))
+  const minVal = Math.min(...allValues)
+  const maxVal = Math.max(...allValues)
+  const padding = Math.max(2, (maxVal - minVal) * 0.05)
+  const yMin = Math.floor(minVal - padding)
+  const yMax = Math.ceil(maxVal + padding)
+
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={300}>
       <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
         <XAxis
@@ -280,7 +288,7 @@ function PMCChart({ data }: { data: any[] }) {
           tickLine={false}
           interval={13}
         />
-        <YAxis yAxisId="left" tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} />
+        <YAxis yAxisId="left" domain={[yMin, yMax]} tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} />
         <YAxis yAxisId="right" orientation="right" tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} hide />
         <ReferenceLine yAxisId="left" y={0} stroke="rgba(255,255,255,0.1)" />
         <Tooltip
