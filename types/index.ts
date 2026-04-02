@@ -4,6 +4,7 @@ export interface UserProfile {
   id: string
   email: string
   name: string
+  role: 'USER' | 'ADMIN'
   height: number | null   // cm
   weight: number | null   // kg
   ftp: number | null      // watts
