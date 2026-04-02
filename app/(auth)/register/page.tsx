@@ -1,14 +1,12 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
 import Link from 'next/link'
-import { Mountain, Loader2, Info } from 'lucide-react'
+import { Mountain, Loader2, Info, Mail } from 'lucide-react'
 
 export default function RegisterPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [registered, setRegistered] = useState(false)
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -41,18 +39,40 @@ export default function RegisterPage() {
         return
       }
 
-      // Auto-login
-      await signIn('credentials', {
-        email: form.email,
-        password: form.password,
-        redirect: false,
-      })
-
-      router.push('/dashboard')
+      setRegistered(true)
     } catch {
       setError('Erreur réseau')
       setLoading(false)
     }
+  }
+
+  if (registered) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-summit-glow" />
+        <div className="absolute inset-0 bg-dark-gradient" />
+        <div className="relative z-10 w-full max-w-md animate-in">
+          <div className="card p-8 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-ventoux-gradient mb-4 shadow-ventoux">
+              <Mail className="w-7 h-7 text-white" />
+            </div>
+            <h2 className="font-display text-xl font-semibold text-summit-light mb-3 uppercase tracking-wide">
+              Vérifiez votre email
+            </h2>
+            <p className="text-stone-400 mb-2">
+              Un email de vérification a été envoyé à
+            </p>
+            <p className="text-ventoux-400 font-medium mb-4">{form.email}</p>
+            <p className="text-stone-500 text-sm">
+              Cliquez sur le lien dans l'email pour activer votre compte, puis connectez-vous.
+            </p>
+            <Link href="/login" className="btn-primary inline-block mt-6 px-6 py-2">
+              Aller à la connexion
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

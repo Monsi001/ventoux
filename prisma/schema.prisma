@@ -8,22 +8,27 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  name          String
-  height        Float?    // cm
-  weight        Float?    // kg
-  ftp           Int?      // watts
-  homeLat       Float?    // latitude domicile
-  homeLng       Float?    // longitude domicile
-  homeCity      String?   // ville domicile
-  stravaId      String?   @unique
-  stravaToken   String?
-  stravaRefresh String?
-  stravaExpiry  DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  email             String    @unique
+  password          String
+  name              String
+  role              Role      @default(USER)
+  emailVerified     Boolean   @default(false)
+  verificationToken String?   @unique
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
+  height            Float?    // cm
+  weight            Float?    // kg
+  ftp               Int?      // watts
+  homeLat           Float?    // latitude domicile
+  homeLng           Float?    // longitude domicile
+  homeCity          String?   // ville domicile
+  stravaId          String?   @unique
+  stravaToken       String?
+  stravaRefresh     String?
+  stravaExpiry      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   races         Race[]
   activities    Activity[]
@@ -114,6 +119,11 @@ model WeeklyConstraint {
 
   @@unique([userId, weekStart])
   @@map("weekly_constraints")
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 enum ActivitySource {

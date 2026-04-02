@@ -1,12 +1,14 @@
 'use client'
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Mountain, Loader2, Eye, EyeOff } from 'lucide-react'
+import { Mountain, Loader2, Eye, EyeOff, CheckCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const verified = searchParams.get('verified')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -25,7 +27,18 @@ export default function LoginPage() {
     })
 
     if (result?.error) {
-      setError('Email ou mot de passe incorrect')
+      // Vérifier si c'est un problème de vérification email
+      const check = await fetch('/api/auth/check-verified', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      }).then(r => r.json())
+
+      if (!check.verified) {
+        setError('Veuillez vérifier votre email avant de vous connecter. Consultez votre boîte de réception.')
+      } else {
+        setError('Email ou mot de passe incorrect')
+      }
       setLoading(false)
     } else {
       router.push('/dashboard')
@@ -64,6 +77,13 @@ export default function LoginPage() {
           <h2 className="font-display text-xl font-semibold text-summit-light mb-6 uppercase tracking-wide">
             Connexion
           </h2>
+
+          {verified === 'true' && (
+            <div className="flex items-center gap-2 text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 mb-4">
+              <CheckCircle size={16} />
+              Email vérifié ! Vous pouvez maintenant vous connecter.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -114,12 +134,19 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center mt-5 text-stone-500 text-sm">
-          Pas encore de compte ?{' '}
-          <Link href="/register" className="text-ventoux-400 hover:text-ventoux-300 transition-colors font-medium">
-            Créer un compte
-          </Link>
-        </p>
+        <div className="text-center mt-5 space-y-2">
+          <p className="text-stone-500 text-sm">
+            Pas encore de compte ?{' '}
+            <Link href="/register" className="text-ventoux-400 hover:text-ventoux-300 transition-colors font-medium">
+              Créer un compte
+            </Link>
+          </p>
+          <p>
+            <Link href="/forgot-password" className="text-stone-600 hover:text-stone-400 transition-colors text-sm">
+              Mot de passe oublié ?
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )
