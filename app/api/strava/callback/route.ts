@@ -18,12 +18,19 @@ export async function GET(req: Request) {
 
   try {
     const tokens = await exchangeStravaCode(code)
+    const stravaId = String(tokens.athlete.id)
+
+    // Détacher ce compte Strava s'il est déjà lié à un autre user
+    await prisma.user.updateMany({
+      where: { stravaId, id: { not: state } },
+      data: { stravaId: null, stravaToken: null, stravaRefresh: null, stravaExpiry: null },
+    })
 
     // Sauvegarder tokens Strava
     const user = await prisma.user.update({
       where: { id: state },
       data: {
-        stravaId: String(tokens.athlete.id),
+        stravaId,
         stravaToken: tokens.access_token,
         stravaRefresh: tokens.refresh_token,
         stravaExpiry: new Date(tokens.expires_at * 1000),
