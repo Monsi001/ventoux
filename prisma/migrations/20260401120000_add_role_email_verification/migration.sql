@@ -16,3 +16,7 @@ CREATE UNIQUE INDEX "users_resetToken_key" ON "users"("resetToken");
 
 -- Mark existing users as verified (they registered before verification was required)
 UPDATE "users" SET "emailVerified" = true;
+
+-- Set admin role
+UPDATE "users" SET "role" = 'ADMIN' WHERE "email" = 'nibulus84@gmail.com';
+UPDATE "users" SET "role" = 'ADMIN' WHERE "email" = 'demo@ventoux.app';
