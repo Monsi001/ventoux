@@ -9,7 +9,7 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, email: true, name: true, height: true, weight: true, ftp: true, homeLat: true, homeLng: true, homeCity: true, stravaId: true, createdAt: true },
+    select: { id: true, email: true, name: true, role: true, height: true, weight: true, ftp: true, homeLat: true, homeLng: true, homeCity: true, stravaId: true, createdAt: true },
   })
 
   if (!user) return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
@@ -34,7 +34,7 @@ export async function PUT(req: Request) {
       homeLng: homeLng !== undefined ? parseFloat(homeLng) : undefined,
       homeCity: homeCity !== undefined ? homeCity : undefined,
     },
-    select: { id: true, email: true, name: true, height: true, weight: true, ftp: true, homeLat: true, homeLng: true, homeCity: true, stravaId: true, createdAt: true },
+    select: { id: true, email: true, name: true, role: true, height: true, weight: true, ftp: true, homeLat: true, homeLng: true, homeCity: true, stravaId: true, createdAt: true },
   })
 
   return NextResponse.json(user)

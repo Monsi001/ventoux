@@ -119,6 +119,11 @@ export default function ProfilePage() {
         <div className="flex items-center gap-3 mb-5">
           <User size={18} className="text-ventoux-400" />
           <h2 className="font-display text-base font-semibold text-summit-light uppercase tracking-wide">Informations</h2>
+          {profile?.role === 'ADMIN' && (
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-ventoux-500/20 text-ventoux-400 border border-ventoux-500/30 px-2 py-0.5 rounded-full">
+              Admin
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
