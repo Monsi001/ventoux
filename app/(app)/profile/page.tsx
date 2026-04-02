@@ -243,9 +243,15 @@ export default function ProfilePage() {
           </div>
           {profile?.stravaId ? (
             <div className="flex items-center gap-2">
-              <a href="/api/strava/sync" className="btn-secondary text-xs flex items-center gap-1.5 py-1.5">
+              <button
+                onClick={async () => {
+                  await fetch('/api/strava/sync', { method: 'POST' })
+                  loadProfile()
+                }}
+                className="btn-secondary text-xs flex items-center gap-1.5 py-1.5"
+              >
                 <RefreshCw size={12} /> Sync
-              </a>
+              </button>
               <button
                 onClick={async () => {
                   if (!confirm('Déconnecter votre compte Strava ?')) return
