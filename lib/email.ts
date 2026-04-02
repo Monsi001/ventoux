@@ -1,15 +1,22 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
-const FROM_EMAIL = process.env.EMAIL_FROM || 'Ventoux Training <noreply@ventoux.app>'
-const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3002'
+function getFromEmail() {
+  return process.env.EMAIL_FROM || 'Ventoux Training <noreply@ventoux.app>'
+}
+
+function getAppUrl() {
+  return process.env.NEXTAUTH_URL || 'http://localhost:3002'
+}
 
 export async function sendVerificationEmail(email: string, token: string, name: string) {
-  const verifyUrl = `${APP_URL}/api/auth/verify?token=${token}`
+  const verifyUrl = `${getAppUrl()}/api/auth/verify?token=${token}`
 
-  await resend.emails.send({
-    from: FROM_EMAIL,
+  await getResend().emails.send({
+    from: getFromEmail(),
     to: email,
     subject: 'Confirmez votre compte Ventoux Training',
     html: `
@@ -29,10 +36,10 @@ export async function sendVerificationEmail(email: string, token: string, name: 
 }
 
 export async function sendPasswordResetEmail(email: string, token: string, name: string) {
-  const resetUrl = `${APP_URL}/reset-password?token=${token}`
+  const resetUrl = `${getAppUrl()}/reset-password?token=${token}`
 
-  await resend.emails.send({
-    from: FROM_EMAIL,
+  await getResend().emails.send({
+    from: getFromEmail(),
     to: email,
     subject: 'Réinitialisation de votre mot de passe',
     html: `
