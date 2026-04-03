@@ -113,10 +113,20 @@ body {
   }
 }
 
+/* ─── Section titles (outside cards) ─────────────────────────────────────────── */
+h2.section-title {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #6E6C69;
+}
+
 /* ─── Animations ─────────────────────────────────────────────────────────────── */
 @layer utilities {
   .animate-in {
     animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-fill-mode: both;
   }
   
   .delay-100 { animation-delay: 100ms; }

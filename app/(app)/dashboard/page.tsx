@@ -104,7 +104,7 @@ export default function DashboardPage() {
   const daysUntilRace = race ? differenceInDays(new Date(race.date), today) : null
 
   return (
-    <div className="space-y-6 animate-in">
+    <div className="space-y-10 animate-in">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -129,13 +129,16 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div>
+        <h2 className="section-title mb-4">Performance</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard
           label="FTP"
           value={user.ftp ? `${user.ftp} W` : '—'}
           sub={user.ftp && user.weight ? `${(user.ftp / user.weight).toFixed(1)} W/kg` : ''}
           icon={<Zap size={16} />}
           color="ventoux"
+          index={0}
         />
         <StatCard
           label="TSS semaine"
@@ -143,6 +146,7 @@ export default function DashboardPage() {
           sub={`${weekHours}h · ${weekActivities.length} séance${weekActivities.length > 1 ? 's' : ''}`}
           icon={<Clock size={16} />}
           color="ventoux"
+          index={1}
         />
         <StatCard
           label="Fitness (CTL)"
@@ -151,6 +155,7 @@ export default function DashboardPage() {
           icon={<TrendingUp size={16} />}
           color={latest?.ctl > 60 ? 'green' : 'yellow'}
           tooltip="Charge chronique — fitness sur 42 jours"
+          index={2}
         />
         <StatCard
           label="Fatigue (ATL)"
@@ -159,6 +164,7 @@ export default function DashboardPage() {
           icon={<Activity size={16} />}
           color={latest?.atl > (latest?.ctl || 0) * 1.3 ? 'red' : 'yellow'}
           tooltip="Charge aiguë — fatigue sur 7 jours"
+          index={3}
         />
         <StatCard
           label="Forme (TSB)"
@@ -167,6 +173,7 @@ export default function DashboardPage() {
           icon={<Activity size={16} />}
           color={latest?.tsb > 5 ? 'green' : latest?.tsb < -20 ? 'red' : 'yellow'}
           tooltip="Équilibre de forme — CTL moins ATL"
+          index={4}
         />
         <StatCard
           label="Temps estimé"
@@ -174,11 +181,15 @@ export default function DashboardPage() {
           sub={ventouxEstimate?.category || 'Ventoux Bédoin'}
           icon={<Mountain size={16} />}
           color="blue"
+          index={5}
         />
+        </div>
       </div>
 
       {/* PMC Chart + prochaines séances */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div>
+        <h2 className="section-title mb-4">Courbe de charge</h2>
+        <div className="grid md:grid-cols-3 gap-4">
         {/* PMC */}
         <div className="md:col-span-2 card p-5">
           <div className="flex items-center justify-between mb-4">
@@ -216,37 +227,40 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
       {/* Activités récentes */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="section-title text-base">Activités récentes</h2>
-          <Link href="/activities" className="btn-ghost text-sm flex items-center gap-1.5">
-            Tout voir <ChevronRight size={14} />
-          </Link>
-        </div>
-        {recentActivities.length > 0 ? (
-          <div className="space-y-2">
-            {recentActivities.slice(0, 5).map(a => (
-              <ActivityRow key={a.id} activity={a} userFtp={user.ftp} />
-            ))}
+      <div>
+        <h2 className="section-title mb-4">Activités récentes</h2>
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/activities" className="btn-ghost text-sm flex items-center gap-1.5">
+              Tout voir <ChevronRight size={14} />
+            </Link>
           </div>
-        ) : (
-          <div className="text-center py-8">
-            <Activity size={32} className="mx-auto text-stone-700 mb-3" />
-            <p className="text-stone-500 text-sm">Aucune activité enregistrée</p>
-            <p className="text-stone-600 text-xs mt-1">Connectez votre compte Strava ou importez un fichier GPX/FIT</p>
-            <div className="flex items-center justify-center gap-3 mt-3">
-              <Link href="/profile" className="btn-primary text-sm inline-block px-4 py-2">
-                Connecter Strava
-              </Link>
-              <Link href="/activities" className="btn-secondary text-sm inline-block px-4 py-2">
-                Importer un fichier
-              </Link>
+          {recentActivities.length > 0 ? (
+            <div className="space-y-2">
+              {recentActivities.slice(0, 5).map(a => (
+                <ActivityRow key={a.id} activity={a} userFtp={user.ftp} />
+              ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-8">
+              <Activity size={32} className="mx-auto text-stone-700 mb-3" />
+              <p className="text-stone-500 text-sm">Aucune activité enregistrée</p>
+              <p className="text-stone-600 text-xs mt-1">Connectez votre compte Strava ou importez un fichier GPX/FIT</p>
+              <div className="flex items-center justify-center gap-3 mt-3">
+                <Link href="/profile" className="btn-primary text-sm inline-block px-4 py-2">
+                  Connecter Strava
+                </Link>
+                <Link href="/activities" className="btn-secondary text-sm inline-block px-4 py-2">
+                  Importer un fichier
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -254,8 +268,8 @@ export default function DashboardPage() {
 
 // ─── Sous-composants ─────────────────────────────────────────────────────────
 
-const StatCard = React.memo(function StatCard({ label, value, sub, icon, color, tooltip }: {
-  label: string; value: string; sub: string; icon: React.ReactNode; color: string; tooltip?: string
+const StatCard = React.memo(function StatCard({ label, value, sub, icon, color, tooltip, index = 0 }: {
+  label: string; value: string; sub: string; icon: React.ReactNode; color: string; tooltip?: string; index?: number
 }) {
   const colorMap: Record<string, string> = {
     ventoux: 'text-ventoux-400 bg-ventoux-500/10',
@@ -266,7 +280,7 @@ const StatCard = React.memo(function StatCard({ label, value, sub, icon, color, 
   }
 
   return (
-    <div className="stat-card card-hover" title={tooltip}>
+    <div className="stat-card card-hover animate-in opacity-0" title={tooltip} style={{ animationDelay: `${index * 80}ms` }}>
       <div className={`inline-flex p-2 rounded-lg ${colorMap[color]} mb-2`}>
         {icon}
       </div>
