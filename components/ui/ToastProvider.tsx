@@ -1,7 +1,7 @@
 'use client'
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 
-export type ToastVariant = 'success' | 'error' | 'info'
+export type ToastVariant = 'success' | 'error' | 'info' | 'celebration'
 
 interface Toast {
   id: number
@@ -54,6 +54,7 @@ const VARIANT_STYLES: Record<ToastVariant, string> = {
   success: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
   error: 'bg-red-500/15 border-red-500/30 text-red-400',
   info: 'bg-blue-500/15 border-blue-500/30 text-blue-400',
+  celebration: 'bg-gradient-to-r from-ventoux-600 to-ventoux-500 text-white border-ventoux-400/30',
 }
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number) => void }) {
