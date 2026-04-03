@@ -39,3 +39,7 @@ public/workbox-*.js
 public/worker-*.js
 public/sw.js.map
 public/workbox-*.js.map
+
+.claude/worktrees/
+.claude/skills/
+.claude/settings.local.json
