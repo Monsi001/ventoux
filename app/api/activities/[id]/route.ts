@@ -18,14 +18,16 @@ export async function PATCH(
     return NextResponse.json({ error: 'TSS invalide (0-1000)' }, { status: 400 })
   }
 
-  const updated = await prisma.activity.updateMany({
-    where: { id, userId: session.user.id },
+  // Vérifier que l'activité appartient à l'utilisateur
+  const existing = await prisma.activity.findFirst({ where: { id, userId: session.user.id } })
+  if (!existing) return NextResponse.json({ error: 'Activité introuvable' }, { status: 404 })
+
+  const updated = await prisma.activity.update({
+    where: { id },
     data: { tss },
   })
 
-  if (updated.count === 0) return NextResponse.json({ error: 'Activité introuvable' }, { status: 404 })
-
-  return NextResponse.json({ ok: true, tss })
+  return NextResponse.json(updated)
 }
 
 export async function DELETE(

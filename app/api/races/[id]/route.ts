@@ -24,8 +24,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params
   const data = await req.json()
 
-  const race = await prisma.race.updateMany({
-    where: { id, userId: session.user.id },
+  // Vérifier que la course appartient à l'utilisateur
+  const existing = await prisma.race.findFirst({ where: { id, userId: session.user.id } })
+  if (!existing) return NextResponse.json({ error: 'Non trouvé' }, { status: 404 })
+
+  const race = await prisma.race.update({
+    where: { id },
     data: {
       name: data.name,
       date: data.date ? new Date(data.date) : undefined,
@@ -38,7 +42,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     },
   })
 
-  return NextResponse.json({ updated: race.count > 0 })
+  return NextResponse.json(race)
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {

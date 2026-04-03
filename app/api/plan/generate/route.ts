@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { generateTrainingPlan } from '@/lib/claude'
+import type { UserProfile, Race, Activity, WeeklyConstraint } from '@/types'
 import { calculatePMC } from '@/lib/training'
 import { subDays, startOfWeek } from 'date-fns'
 
@@ -71,11 +72,17 @@ export async function POST(req: Request) {
   const latestPMC = pmc[pmc.length - 1]
 
   try {
+    // Sérialiser les dates Prisma (Date) en string ISO pour le passage à Claude
+    const userInput = { ...user, createdAt: user.createdAt.toISOString() } as unknown as UserProfile
+    const raceInput = { ...race, date: race.date.toISOString(), createdAt: race.createdAt.toISOString(), updatedAt: race.updatedAt.toISOString() } as unknown as Race
+    const activitiesInput = recentActivities.map(a => ({ ...a, date: a.date.toISOString(), createdAt: a.createdAt.toISOString() })) as unknown as Activity[]
+    const constraintsInput = constraints.map(c => ({ ...c, weekStart: c.weekStart.toISOString(), createdAt: c.createdAt.toISOString(), updatedAt: c.updatedAt.toISOString() })) as unknown as WeeklyConstraint[]
+
     const { weeks, phases, aiNotes } = await generateTrainingPlan({
-      user: { ...user, createdAt: user.createdAt.toISOString() } as any,
-      race: { ...race, date: race.date.toISOString(), createdAt: race.createdAt.toISOString(), updatedAt: race.updatedAt.toISOString() } as any,
-      recentActivities: recentActivities.map(a => ({ ...a, date: a.date.toISOString(), createdAt: a.createdAt.toISOString() })) as any,
-      constraints: constraints.map(c => ({ ...c, weekStart: c.weekStart.toISOString(), createdAt: c.createdAt.toISOString(), updatedAt: c.updatedAt.toISOString() })) as any,
+      user: userInput,
+      race: raceInput,
+      recentActivities: activitiesInput,
+      constraints: constraintsInput,
       currentCTL: latestPMC?.ctl,
       currentATL: latestPMC?.atl,
       startDate: planStart.toISOString(),
