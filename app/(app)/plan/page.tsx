@@ -881,30 +881,45 @@ export default function PlanPage() {
             </div>
             <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
           </div>
-          <div className="text-sm text-stone-300 leading-relaxed space-y-2">
-            {(() => {
-              // Remove the leading "DIAGNOSTIC & STRATÉGIE:" prefix (redundant with card title)
-              // Also handles variations: "DIAGNOSTIC:", "DIAGNOSTIC & STRATEGIE:", etc.
-              const cleaned = plan!.aiNotes.replace(/^DIAGNOSTIC[^:]*:\s*/i, '')
-              // Split on section headers
-              return cleaned.split(/(?=RISQUE\s*:|PLAN ADAPTÉ\s*:|PHASES?\s*:|OBJECTIF\s*:|RECOMMANDATION\s*:)/).map((block: string, i: number) => {
-                const colonIdx = block.indexOf(':')
-                const match = colonIdx > 0 && colonIdx < 30 ? [null, block.slice(0, colonIdx), block.slice(colonIdx + 1)] : null
-                if (match) {
-                  const label = match[1]!.trim()
-                  const content = match[2]!.trim()
-                  const capitalized = content.charAt(0).toUpperCase() + content.slice(1)
+          <div className="text-sm text-stone-300 leading-relaxed space-y-3">
+            {plan!.aiNotes
+              // Split on patterns like "MOT_CLÉ:" or "(N)" numbered items
+              .split(/(?:^|\.\s+)(?=[A-ZÉÈÀÊ]{2,}[A-ZÉÈÀÊ &]*:|\(\d+\)\s)/)
+              .filter(Boolean)
+              .map((block: string, i: number) => {
+                const trimmed = block.trim().replace(/\.$/, '')
+                if (!trimmed) return null
+
+                // Detect "LABEL: content" pattern
+                const colonMatch = trimmed.match(/^([A-ZÉÈÀÊ][A-ZÉÈÀÊ &]+?):\s*(.+)/)
+                if (colonMatch) {
+                  const label = colonMatch[1].trim()
+                  const content = colonMatch[2].trim()
+                  // Skip if label is just repeating the card title
+                  if (/^DIAGNOSTIC/i.test(label)) {
+                    return content ? <p key={i}>{content}</p> : null
+                  }
                   return (
-                    <div key={i}>
-                      <span className="text-ventoux-400 font-semibold text-xs uppercase tracking-wider">{label}</span>
-                      <p className="mt-0.5">{capitalized}</p>
+                    <div key={i} className="bg-white/[0.02] rounded-lg p-3">
+                      <span className="text-ventoux-400 font-semibold text-xs uppercase tracking-wider block mb-1">{label}</span>
+                      <p>{content}</p>
                     </div>
                   )
                 }
-                const trimmed = block.trim()
-                return trimmed ? <p key={i}>{trimmed.charAt(0).toUpperCase() + trimmed.slice(1)}</p> : null
-              })
-            })()}
+
+                // Detect "(1) content" numbered items
+                const numMatch = trimmed.match(/^\((\d+)\)\s*(.+)/)
+                if (numMatch) {
+                  return (
+                    <div key={i} className="flex gap-2.5">
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-ventoux-500/15 text-ventoux-400 text-xs flex items-center justify-center font-bold">{numMatch[1]}</span>
+                      <p className="flex-1">{numMatch[2]}</p>
+                    </div>
+                  )
+                }
+
+                return <p key={i}>{trimmed}</p>
+              })}
           </div>
         </div>
       )}
