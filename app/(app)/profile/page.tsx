@@ -112,7 +112,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto animate-in">
-      <h1 className="font-display text-3xl font-bold text-summit-light uppercase tracking-wide">Profil</h1>
+      <h1 className="font-display text-2xl md:text-3xl font-bold text-summit-light uppercase tracking-wide">Profil</h1>
 
       {/* Infos personnelles */}
       <div className="card p-6">

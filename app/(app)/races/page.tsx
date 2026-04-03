@@ -98,7 +98,7 @@ export default function RacesPage() {
     <div className="space-y-6 animate-in">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-display text-3xl font-bold text-summit-light uppercase tracking-wide">Courses</h1>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-summit-light uppercase tracking-wide">Courses</h1>
           <p className="text-stone-500 mt-0.5 text-sm">Gérez vos objectifs de course</p>
         </div>
         <button onClick={openAdd} className="btn-primary flex items-center gap-2">
@@ -221,7 +221,7 @@ export default function RacesPage() {
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="text-right mr-2">
-                      <p className="font-display text-3xl font-bold text-summit-light">
+                      <p className="font-display text-2xl md:text-3xl font-bold text-summit-light">
                         {daysUntil > 0 ? `J-${daysUntil}` : daysUntil === 0 ? "Aujourd'hui !" : `J+${Math.abs(daysUntil)}`}
                       </p>
                       <p className="text-stone-600 text-xs uppercase tracking-widest">

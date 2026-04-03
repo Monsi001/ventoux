@@ -1078,7 +1078,7 @@ export default function PlanPage() {
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedSession(null)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-md bg-stone-950 border-l border-white/[0.06] h-full overflow-y-auto shadow-2xl animate-in"
+            className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-md bg-stone-950 border-l border-white/[0.06] h-full overflow-y-auto shadow-2xl animate-in"
             style={{ animation: 'slideInRight 0.3s ease-out' }}
             onClick={e => e.stopPropagation()}
           >

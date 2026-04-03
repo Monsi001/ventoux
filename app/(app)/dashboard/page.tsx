@@ -107,7 +107,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-display text-3xl font-bold text-summit-light uppercase tracking-wide">
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-summit-light uppercase tracking-wide">
             Tableau de bord
           </h1>
           <p className="text-stone-500 mt-0.5">
@@ -120,7 +120,7 @@ export default function DashboardPage() {
               <Mountain size={16} />
               <span className="font-display text-sm uppercase tracking-widest">{race.name}</span>
             </div>
-            <p className="font-display text-4xl font-bold text-summit-light mt-0.5">
+            <p className="font-display text-3xl md:text-4xl font-bold text-summit-light mt-0.5">
               J{daysUntilRace > 0 ? `-${daysUntilRace}` : daysUntilRace === 0 ? '0' : `+${Math.abs(daysUntilRace)}`}
             </p>
           </div>
@@ -278,7 +278,7 @@ function PMCChart({ data }: { data: any[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+      <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
         <XAxis
           dataKey="date"

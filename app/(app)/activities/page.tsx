@@ -109,7 +109,7 @@ export default function ActivitiesPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold text-summit-light uppercase tracking-wide">
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-summit-light uppercase tracking-wide">
             Activités
           </h1>
           <p className="text-stone-500 mt-0.5 text-sm">{activities.length} activités importées</p>
@@ -164,7 +164,7 @@ export default function ActivitiesPage() {
       )}
 
       {/* Semaine en cours */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="stat-card">
           <div className="stat-value">{Math.round(weekHours * 10) / 10}h</div>
           <div className="stat-label">Volume semaine</div>
