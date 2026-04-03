@@ -74,8 +74,8 @@ export async function GET(req: Request) {
           update: {},  // Ne pas écraser si déjà importé
           create: { ...mapped, tss },
         })
-      } catch {
-        // Ignorer erreurs de doublons
+      } catch (e) {
+        console.error(`[Strava Callback] Upsert failed for activity stravaId=${mapped.stravaId}:`, e)
       }
     }
 

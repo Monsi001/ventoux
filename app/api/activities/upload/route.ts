@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { parseGPX, parseFIT } from '@/lib/parsers'
 import { calculateTSS, calculateIF } from '@/lib/training'
+import { ActivitySource, ActivityType } from '@prisma/client'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -65,8 +66,8 @@ export async function POST(req: Request) {
   const activity = await prisma.activity.create({
     data: {
       userId: session.user.id,
-      source: source as any,
-      type: activityType as any,
+      source: source as ActivitySource,
+      type: activityType as ActivityType,
       name: parsed.name || file.name.replace(/\.(gpx|fit)$/i, ''),
       date: parsed.date || new Date(),
       duration: parsed.duration,

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { calculateTSS, calculateIF, calculateNP } from '@/lib/training'
+import { ActivityType } from '@prisma/client'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
   const activities = await prisma.activity.findMany({
     where: {
       userId: session.user.id,
-      ...(type ? { type: type as any } : {}),
+      ...(type ? { type: type as ActivityType } : {}),
     },
     orderBy: { date: 'desc' },
     take: limit,
