@@ -149,6 +149,7 @@ export default function DashboardPage() {
           sub="Charge chronique"
           icon={<TrendingUp size={16} />}
           color={latest?.ctl > 60 ? 'green' : 'yellow'}
+          tooltip="Charge chronique — fitness sur 42 jours"
         />
         <StatCard
           label="Fatigue (ATL)"
@@ -156,6 +157,7 @@ export default function DashboardPage() {
           sub="Charge aiguë"
           icon={<Activity size={16} />}
           color={latest?.atl > (latest?.ctl || 0) * 1.3 ? 'red' : 'yellow'}
+          tooltip="Charge aiguë — fatigue sur 7 jours"
         />
         <StatCard
           label="Forme (TSB)"
@@ -163,6 +165,7 @@ export default function DashboardPage() {
           sub={latest?.tsb > 5 ? 'Bien reposé' : latest?.tsb < -20 ? 'Fatigué' : 'Équilibré'}
           icon={<Activity size={16} />}
           color={latest?.tsb > 5 ? 'green' : latest?.tsb < -20 ? 'red' : 'yellow'}
+          tooltip="Équilibre de forme — CTL moins ATL"
         />
         <StatCard
           label="Temps estimé"
@@ -244,8 +247,8 @@ export default function DashboardPage() {
 
 // ─── Sous-composants ─────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub, icon, color }: {
-  label: string; value: string; sub: string; icon: React.ReactNode; color: string
+function StatCard({ label, value, sub, icon, color, tooltip }: {
+  label: string; value: string; sub: string; icon: React.ReactNode; color: string; tooltip?: string
 }) {
   const colorMap: Record<string, string> = {
     ventoux: 'text-ventoux-400 bg-ventoux-500/10',
@@ -256,7 +259,7 @@ function StatCard({ label, value, sub, icon, color }: {
   }
 
   return (
-    <div className="stat-card card-hover">
+    <div className="stat-card card-hover" title={tooltip}>
       <div className={`inline-flex p-2 rounded-lg ${colorMap[color]} mb-2`}>
         {icon}
       </div>
@@ -277,6 +280,7 @@ function PMCChart({ data }: { data: any[] }) {
   const yMax = Math.ceil(maxVal + padding)
 
   return (
+    <div aria-label="Graphique Performance Management Chart" role="img">
     <ResponsiveContainer width="100%" height={300}>
       <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
@@ -286,7 +290,7 @@ function PMCChart({ data }: { data: any[] }) {
           tick={{ fill: '#6E6C69', fontSize: 10 }}
           axisLine={false}
           tickLine={false}
-          interval={13}
+          interval="preserveStartEnd"
         />
         <YAxis yAxisId="left" domain={[yMin, yMax]} tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} />
         <YAxis yAxisId="right" orientation="right" tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} hide />
@@ -294,6 +298,7 @@ function PMCChart({ data }: { data: any[] }) {
         <Tooltip
           contentStyle={{ background: '#141312', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: 12 }}
           labelFormatter={d => format(new Date(d), 'dd MMM', { locale: fr })}
+          formatter={(value: number, name: string) => [Math.round(value), name]}
         />
         <Bar dataKey="tss" yAxisId="right" fill="rgba(255,255,255,0.08)" radius={[2, 2, 0, 0]} name="TSS" />
         <Line dataKey="ctl" yAxisId="left" stroke="#60A5FA" strokeWidth={2} dot={false} name="CTL (fitness)" />
@@ -301,6 +306,7 @@ function PMCChart({ data }: { data: any[] }) {
         <Line dataKey="tsb" yAxisId="left" stroke="#FF6B35" strokeWidth={2} dot={false} name="TSB (forme)" />
       </ComposedChart>
     </ResponsiveContainer>
+    </div>
   )
 }
 
