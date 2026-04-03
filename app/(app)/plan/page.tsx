@@ -1239,7 +1239,7 @@ export default function PlanPage() {
               )}
 
               {/* MyWhoosh workout */}
-              {selectedSession.mywhooshWorkoutName && selectedSession.indoor && (
+              {selectedSession.mywhooshWorkoutName && (
                 <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/15 overflow-hidden">
                   <div className="px-4 py-3 flex items-center gap-2 border-b border-cyan-500/10">
                     <Bike size={14} className="text-cyan-400" />
