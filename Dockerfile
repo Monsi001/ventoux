@@ -20,7 +20,7 @@ EXPOSE 3000
 ENV PORT 3000
 ENV NODE_ENV development
 
-CMD ["sh", "-c", "npx prisma db push --skip-generate && npm run dev"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && npm run dev"]
 
 # Builder for production
 FROM base AS builder
