@@ -39,16 +39,22 @@ interface SessionCardProps {
   onClick: () => void
   done: boolean
   compact: boolean
+  draggable?: boolean
 }
 
-export default function SessionCard({ session, onClick, done, compact }: SessionCardProps) {
+export default function SessionCard({ session, onClick, done, compact, draggable: isDraggable }: SessionCardProps) {
   const styles = TYPE_BG[session.type] || 'bg-stone-800/50 border-stone-700/30 text-stone-400'
 
   if (compact) {
     return (
       <button
         onClick={onClick}
-        className={`w-full text-left px-2 py-2 rounded-lg border text-[11px] leading-snug transition-all hover:brightness-125 cursor-pointer ${styles} ${done ? 'opacity-40' : ''}`}
+        draggable={isDraggable}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('sessionId', session.id)
+          e.dataTransfer.effectAllowed = 'move'
+        }}
+        className={`w-full text-left px-2 py-2 rounded-lg border text-[11px] leading-snug transition-all hover:brightness-125 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${styles} ${done ? 'opacity-40' : ''}`}
       >
         <div className="flex items-center gap-1">
           {done && <Check size={9} className="text-green-400" />}
