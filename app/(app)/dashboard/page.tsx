@@ -1,19 +1,21 @@
 'use client'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import {
   TrendingUp, Zap, Calendar, Mountain, Clock,
   Activity, ChevronRight, RefreshCw, AlertTriangle
 } from 'lucide-react'
-import {
-  ComposedChart, Line, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, ReferenceLine
-} from 'recharts'
 import { calculatePMC, estimateVentouxTime, formatMinutes } from '@/lib/training'
 import { format, differenceInDays, startOfWeek, addDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import type { Activity as ActivityType, TrainingPlan, Race, UserProfile } from '@/types'
 import { cachedFetch } from '@/lib/fetch-cache'
+
+const PMCChart = dynamic(() => import('./PMCChart'), {
+  ssr: false,
+  loading: () => <div className="h-64 bg-white/[0.05] rounded-xl animate-pulse" />,
+})
 
 // ─── Types inline ─────────────────────────────────────────────────────────────
 
@@ -73,9 +75,8 @@ export default function DashboardPage() {
   const weekTss = weekActivities.reduce((s, a) => s + (a.tss || 0), 0)
   const weekHours = Math.round(weekActivities.reduce((s, a) => s + a.duration, 0) / 3600 * 10) / 10
 
-  // Calcul PMC
+  // Calcul PMC (le filtre tss != null est fait côté requête Prisma)
   const activitiesForPMC = recentActivities
-    .filter(a => a.tss !== null)
     .map(a => ({ date: a.date, tss: a.tss! }))
 
   const pmc = calculatePMC(activitiesForPMC, 60)
@@ -244,7 +245,7 @@ export default function DashboardPage() {
 
 // ─── Sous-composants ─────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub, icon, color }: {
+const StatCard = React.memo(function StatCard({ label, value, sub, icon, color }: {
   label: string; value: string; sub: string; icon: React.ReactNode; color: string
 }) {
   const colorMap: Record<string, string> = {
@@ -265,44 +266,7 @@ function StatCard({ label, value, sub, icon, color }: {
       {sub && <div className="text-stone-600 text-xs mt-0.5">{sub}</div>}
     </div>
   )
-}
-
-function PMCChart({ data }: { data: any[] }) {
-  // Calculer le domaine serré pour mieux voir les progressions lentes
-  const allValues = data.flatMap(d => [d.ctl, d.atl, d.tsb].filter(v => v != null))
-  const minVal = Math.min(...allValues)
-  const maxVal = Math.max(...allValues)
-  const padding = Math.max(2, (maxVal - minVal) * 0.05)
-  const yMin = Math.floor(minVal - padding)
-  const yMax = Math.ceil(maxVal + padding)
-
-  return (
-    <ResponsiveContainer width="100%" height={300}>
-      <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-        <XAxis
-          dataKey="date"
-          tickFormatter={d => format(new Date(d), 'dd/MM')}
-          tick={{ fill: '#6E6C69', fontSize: 10 }}
-          axisLine={false}
-          tickLine={false}
-          interval={13}
-        />
-        <YAxis yAxisId="left" domain={[yMin, yMax]} tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} />
-        <YAxis yAxisId="right" orientation="right" tick={{ fill: '#6E6C69', fontSize: 10 }} axisLine={false} tickLine={false} hide />
-        <ReferenceLine yAxisId="left" y={0} stroke="rgba(255,255,255,0.1)" />
-        <Tooltip
-          contentStyle={{ background: '#141312', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: 12 }}
-          labelFormatter={d => format(new Date(d), 'dd MMM', { locale: fr })}
-        />
-        <Bar dataKey="tss" yAxisId="right" fill="rgba(255,255,255,0.08)" radius={[2, 2, 0, 0]} name="TSS" />
-        <Line dataKey="ctl" yAxisId="left" stroke="#60A5FA" strokeWidth={2} dot={false} name="CTL (fitness)" />
-        <Line dataKey="atl" yAxisId="left" stroke="#F87171" strokeWidth={2} dot={false} name="ATL (fatigue)" />
-        <Line dataKey="tsb" yAxisId="left" stroke="#FF6B35" strokeWidth={2} dot={false} name="TSB (forme)" />
-      </ComposedChart>
-    </ResponsiveContainer>
-  )
-}
+})
 
 const ZONE_COLORS: Record<number, string> = {
   1: '#6B9EFF', 2: '#4ECCA3', 3: '#F7C948', 4: '#FF9F45', 5: '#FF5252', 6: '#C45EFF', 7: '#FF2D9A',
@@ -331,7 +295,7 @@ function SessionCard({ session, userFtp }: { session: any; userFtp: number | nul
   )
 }
 
-function ActivityRow({ activity, userFtp }: { activity: ActivityType; userFtp: number | null }) {
+const ActivityRow = React.memo(function ActivityRow({ activity, userFtp }: { activity: ActivityType; userFtp: number | null }) {
   const sourceColors: Record<string, string> = {
     STRAVA: '#FC4C02', MYWHOOSH: '#1E3A5F', MANUAL: '#6E6C69',
   }
@@ -355,7 +319,7 @@ function ActivityRow({ activity, userFtp }: { activity: ActivityType; userFtp: n
       </div>
     </div>
   )
-}
+})
 
 function DashboardSkeleton() {
   return (

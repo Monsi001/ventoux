@@ -31,7 +31,7 @@ export async function GET(req: Request) {
 
   if (include.includes('activities')) {
     queries.activities = prisma.activity.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, tss: { not: null } },
       orderBy: { date: 'desc' },
       take: activityLimit,
       select: {
