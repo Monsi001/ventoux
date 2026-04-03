@@ -59,7 +59,9 @@ export default function ActivitiesPage() {
     const res = await fetch('/api/strava/sync', { method: 'POST' })
     const data = await res.json()
     if (res.ok) {
-      setSyncResult(`✓ ${data.synced} activité(s) importée(s)`)
+      setSyncResult(data.synced === 0
+        ? '✓ Déjà à jour — aucune nouvelle activité'
+        : `✓ ${data.synced} activité(s) importée(s)`)
       loadActivities()
     } else {
       setSyncResult(`Erreur : ${data.error}`)
@@ -188,7 +190,31 @@ export default function ActivitiesPage() {
         ) : activities.length === 0 ? (
           <div className="p-16 text-center">
             <Activity size={48} className="mx-auto text-stone-700 mb-4" />
-            <p className="text-stone-500">Aucune activité — connectez Strava ou importez un fichier GPX/FIT</p>
+            <p className="text-stone-500">Aucune activité enregistrée</p>
+            <p className="text-stone-600 text-sm mt-1">Connectez votre compte Strava ou importez un fichier GPX/FIT</p>
+            <div className="flex items-center justify-center gap-3 mt-4">
+              {stravaConnected ? (
+                <button onClick={syncStrava} disabled={syncing} className="btn-primary flex items-center gap-2">
+                  {syncing ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+                  Sync Strava
+                </button>
+              ) : (
+                <a href="/api/strava/auth" className="btn-primary flex items-center gap-2">
+                  Connecter Strava
+                </a>
+              )}
+              <label className="btn-secondary flex items-center gap-2 cursor-pointer">
+                <Upload size={15} />
+                Importer GPX/FIT
+                <input
+                  type="file"
+                  accept=".gpx,.fit"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                />
+              </label>
+            </div>
           </div>
         ) : (
           <div className="divide-y divide-white/[0.04]">

@@ -205,9 +205,9 @@ export default function DashboardPage() {
           ) : (
             <div className="text-center py-8">
               <Calendar size={32} className="mx-auto text-stone-700 mb-3" />
-              <p className="text-stone-500 text-sm">Aucun plan généré</p>
-              <Link href="/races" className="btn-primary text-sm inline-block mt-3 px-4 py-2">
-                Créer un plan
+              <p className="text-stone-500 text-sm">{"Aucun plan d'entraînement actif"}</p>
+              <Link href="/plan" className="btn-primary text-sm inline-block mt-3 px-4 py-2">
+                Générer un plan
               </Link>
             </div>
           )}
@@ -231,10 +231,16 @@ export default function DashboardPage() {
         ) : (
           <div className="text-center py-8">
             <Activity size={32} className="mx-auto text-stone-700 mb-3" />
-            <p className="text-stone-500 text-sm">Aucune activité — connectez Strava ou uploadez un fichier</p>
-            <Link href="/activities" className="btn-secondary text-sm inline-block mt-3 px-4 py-2">
-              Importer des activités
-            </Link>
+            <p className="text-stone-500 text-sm">Aucune activité enregistrée</p>
+            <p className="text-stone-600 text-xs mt-1">Connectez votre compte Strava ou importez un fichier GPX/FIT</p>
+            <div className="flex items-center justify-center gap-3 mt-3">
+              <Link href="/profile" className="btn-primary text-sm inline-block px-4 py-2">
+                Connecter Strava
+              </Link>
+              <Link href="/activities" className="btn-secondary text-sm inline-block px-4 py-2">
+                Importer un fichier
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -361,8 +367,8 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="skeleton h-8 w-48 rounded-xl" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[...Array(6)].map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
       </div>
       <div className="grid md:grid-cols-3 gap-4">
         <div className="md:col-span-2 skeleton h-64 rounded-2xl" />
