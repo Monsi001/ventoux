@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle, Pencil, Trash2 } from 'lucide-react'
+import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle, Pencil, Trash2, Search, Download } from 'lucide-react'
 import type { Activity as ActivityType } from '@/types'
 import { formatDuration } from '@/lib/training'
 import { cachedFetch } from '@/lib/fetch-cache'
@@ -32,7 +32,34 @@ export default function ActivitiesPage() {
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [stravaConnected, setStravaConnected] = useState(false)
+  const [search, setSearch] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const filteredActivities = activities.filter(a =>
+    search === '' || a.name.toLowerCase().includes(search.toLowerCase())
+  )
+
+  function exportCsv() {
+    const headers = ['Date', 'Nom', 'Type', 'Durée(min)', 'Distance(km)', 'D+(m)', 'TSS', 'Puissance moy']
+    const rows = filteredActivities.map(a => [
+      format(new Date(a.date), 'yyyy-MM-dd'),
+      `"${a.name.replace(/"/g, '""')}"`,
+      TYPE_LABELS[a.type] || a.type,
+      Math.round(a.duration / 60),
+      a.distance?.toFixed(1) ?? '',
+      a.elevation ?? '',
+      a.tss ? Math.round(a.tss) : '',
+      a.avgPower ?? '',
+    ].join(','))
+    const csvContent = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `activites-ventoux-${format(new Date(), 'yyyy-MM-dd')}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   useEffect(() => {
     loadAll()
@@ -112,10 +139,28 @@ export default function ActivitiesPage() {
           <h1 className="font-display text-2xl md:text-3xl font-bold text-summit-light uppercase tracking-wide">
             Activités
           </h1>
-          <p className="text-stone-500 mt-0.5 text-sm">{activities.length} activités importées</p>
+          <p className="text-stone-500 mt-0.5 text-sm">{filteredActivities.length}{search ? ` / ${activities.length}` : ''} activités importées</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Recherche */}
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 pr-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-stone-300 placeholder:text-stone-600 focus:outline-none focus:border-ventoux-400/40 w-44"
+            />
+          </div>
+
+          {/* Export CSV */}
+          <button onClick={exportCsv} className="btn-secondary flex items-center gap-2" title="Exporter CSV">
+            <Download size={15} />
+            <span className="hidden sm:inline">Exporter CSV</span>
+          </button>
+
           {/* Upload GPX/FIT */}
           <label className="btn-secondary flex items-center gap-2 cursor-pointer">
             {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
@@ -185,14 +230,14 @@ export default function ActivitiesPage() {
           <div className="p-8 space-y-3">
             {[...Array(6)].map((_, i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
           </div>
-        ) : activities.length === 0 ? (
+        ) : filteredActivities.length === 0 ? (
           <div className="p-16 text-center">
             <Activity size={48} className="mx-auto text-stone-700 mb-4" />
-            <p className="text-stone-500">Aucune activité — connectez Strava ou importez un fichier GPX/FIT</p>
+            <p className="text-stone-500">{search ? 'Aucune activité ne correspond à la recherche' : 'Aucune activité — connectez Strava ou importez un fichier GPX/FIT'}</p>
           </div>
         ) : (
           <div className="divide-y divide-white/[0.04]">
-            {activities.map(activity => (
+            {filteredActivities.map(activity => (
               <ActivityRow key={activity.id} activity={activity} onTssUpdate={handleTssUpdate} onDelete={(id) => setActivities(prev => prev.filter(a => a.id !== id))} />
             ))}
           </div>
