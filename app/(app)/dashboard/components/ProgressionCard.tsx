@@ -4,10 +4,11 @@ import { TrendingUp, Target, CheckCircle2 } from 'lucide-react'
 interface ProgressionCardProps {
   pmc: { date: string; ctl: number; atl: number; tsb: number }[]
   activePlan: any
+  activities: { date: string; type: string; source: string }[]
   ventouxEstimate: { timeMinutes: number; category: string } | null
 }
 
-export function ProgressionCard({ pmc, activePlan, ventouxEstimate }: ProgressionCardProps) {
+export function ProgressionCard({ pmc, activePlan, activities, ventouxEstimate }: ProgressionCardProps) {
   const today = new Date()
 
   // A. Tendance fitness (28 jours)
@@ -31,17 +32,35 @@ export function ProgressionCard({ pmc, activePlan, ventouxEstimate }: Progressio
     }
   }
 
-  // B. Taux de complétion
+  // B. Taux de complétion — compte session.completed OU activité matchée par date
   let completionRate = 0
   let totalSessions = 0
   let completedSessions = 0
   if (activePlan?.weeks) {
+    const CYCLING_TYPES = ['RIDE', 'VIRTUAL_RIDE']
     for (const week of activePlan.weeks) {
       const weekStart = new Date(week.weekStart)
       if (weekStart < today) {
         for (const session of week.sessions || []) {
           totalSessions++
-          if (session.completed) completedSessions++
+          if (session.completed) {
+            completedSessions++
+          } else {
+            // Check if there's a matching activity on the session's day
+            const dayIdx = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].indexOf(session.day)
+            if (dayIdx >= 0) {
+              const sessionDate = new Date(weekStart)
+              sessionDate.setDate(sessionDate.getDate() + dayIdx)
+              const dateStr = sessionDate.toISOString().split('T')[0]
+              const hasActivity = activities.some(a => {
+                const actDate = new Date(a.date).toISOString().split('T')[0]
+                if (actDate !== dateStr) return false
+                if (session.type === 'STRENGTH') return a.type === 'STRENGTH'
+                return CYCLING_TYPES.includes(a.type)
+              })
+              if (hasActivity) completedSessions++
+            }
+          }
         }
       }
     }

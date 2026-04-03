@@ -212,7 +212,7 @@ export default function DashboardPage() {
 
       {/* Progression */}
       {pmc.length > 0 && (
-        <ProgressionCard pmc={pmc} activePlan={activePlan} ventouxEstimate={ventouxEstimate} />
+        <ProgressionCard pmc={pmc} activePlan={activePlan} activities={recentActivities} ventouxEstimate={ventouxEstimate} />
       )}
 
       {/* PMC Chart + prochaines séances */}
