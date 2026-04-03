@@ -84,6 +84,7 @@ export default function PlanPage() {
   const [loadingWorkout, setLoadingWorkout] = useState(false)
   const [readjusting, setReadjusting] = useState(false)
   const [readjustMsg, setReadjustMsg] = useState('')
+  const [activeTab, setActiveTab] = useState<'week' | 'overview' | 'coach'>('week')
   const [rideSuggestions, setRideSuggestions] = useState<any[] | null>(null)
   const [loadingRide, setLoadingRide] = useState(false)
   const [planStartDate, setPlanStartDate] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
@@ -721,8 +722,32 @@ export default function PlanPage() {
           <span>·</span>
           <span>{currentWeek?.sessions?.length || 0} séances</span>
         </div>
+
+        {/* Segmented control */}
+        <div className="flex bg-stone-900/60 rounded-xl p-1 gap-1 mt-3">
+          {[
+            { key: 'week', label: 'Semaine' },
+            { key: 'overview', label: 'Vue d\'ensemble' },
+            { key: 'coach', label: 'Coach' },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.key
+                  ? 'bg-ventoux-500/20 text-ventoux-400'
+                  : 'text-stone-500 hover:text-stone-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* ─── Tab: Vue d'ensemble ──────────────────────────────────────────── */}
+      {activeTab === 'overview' && (
+        <>
       {/* Phase progress bar */}
       {plan!.phases?.length > 0 && (() => {
         const totalPlanWeeks = Math.max(...plan!.phases.map((p: any) => p.endWeek || 0), 1)
@@ -817,6 +842,15 @@ export default function PlanPage() {
         </div>
       )}
 
+      {/* Volume chart in overview */}
+      <div className="border-t border-white/[0.04] mt-8 mb-8" />
+      <VolumeChart plan={plan!} activities={activities} currentWeekIdx={currentWeekIdx} onWeekSelect={setCurrentWeekIdx} />
+        </>
+      )}
+
+      {/* ─── Tab: Semaine ──────────────────────────────────────────────────── */}
+      {activeTab === 'week' && (
+        <>
       {/* Error toast */}
       {error && (
         <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
@@ -897,55 +931,66 @@ export default function PlanPage() {
             })}
           </div>
 
-          {/* Mobile: stacked list */}
+          {/* Mobile: stacked list (today first) */}
           <div className="md:hidden space-y-2">
-            {DAY_KEYS.map((dayKey, i) => {
-              const sessions = currentWeek.sessions?.filter((s: TrainingSession) => s.day === dayKey) || []
-              const weekDate = addDays(new Date(currentWeek.weekStart), i)
-              const isToday = format(weekDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-              const dayActivity = getActivityForDay(currentWeek.weekStart, i)
-
-              if (sessions.length === 0 && !dayActivity) return null
-
-              return (
-                <div key={dayKey} className={`rounded-xl overflow-hidden ${
-                  isToday ? 'ring-1 ring-ventoux-500/40' : ''
-                }`}>
-                  {/* Day header row */}
-                  <div className={`flex items-center gap-3 px-4 py-2.5 ${isToday ? 'bg-ventoux-500/[0.06]' : 'bg-white/[0.02]'}`}>
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-display font-bold text-sm ${
-                      isToday ? 'bg-ventoux-500/20 text-ventoux-400' : 'bg-white/[0.04] text-stone-500'
-                    }`}>
-                      {format(weekDate, 'd')}
-                    </div>
-                    <span className={`text-sm font-medium ${isToday ? 'text-ventoux-400' : 'text-stone-500'}`}>
-                      {DAYS_FR_LONG[i]}
-                    </span>
-                    {isToday && <span className="text-[10px] text-ventoux-500 bg-ventoux-500/10 px-2 py-0.5 rounded-full">Aujourd'hui</span>}
-                  </div>
-
-                  {/* Sessions */}
-                  <div className="px-3 pb-3 pt-1.5 space-y-2">
-                    {dayActivity && (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 text-green-400 text-xs">
-                        <Check size={12} />
-                        <span className="font-medium">{dayActivity.name}</span>
-                        {dayActivity.tss && <span className="ml-auto text-green-500/60">TSS {Math.round(dayActivity.tss)}</span>}
-                      </div>
-                    )}
-                    {sessions.map((session: TrainingSession) => (
-                      <SessionCard
-                        key={session.id}
-                        session={session}
-                        onClick={() => openSessionDetail(session)}
-                        done={!!dayActivity || !!session.completed}
-                        compact={false}
-                      />
-                    ))}
-                  </div>
-                </div>
+            {(() => {
+              const todayStr = format(new Date(), 'yyyy-MM-dd')
+              const todayIndex = DAY_KEYS.findIndex((_, i) =>
+                format(addDays(new Date(currentWeek.weekStart), i), 'yyyy-MM-dd') === todayStr
               )
-            })}
+              const sortedIndices = todayIndex >= 0
+                ? [...Array(7).keys()].slice(todayIndex).concat([...Array(7).keys()].slice(0, todayIndex))
+                : [...Array(7).keys()]
+
+              return sortedIndices.map(i => {
+                const dayKey = DAY_KEYS[i]
+                const sessions = currentWeek.sessions?.filter((s: TrainingSession) => s.day === dayKey) || []
+                const weekDate = addDays(new Date(currentWeek.weekStart), i)
+                const isToday = format(weekDate, 'yyyy-MM-dd') === todayStr
+                const dayActivity = getActivityForDay(currentWeek.weekStart, i)
+
+                if (sessions.length === 0 && !dayActivity) return null
+
+                return (
+                  <div key={dayKey} className={`rounded-xl overflow-hidden ${
+                    isToday ? 'ring-2 ring-ventoux-500/30 bg-ventoux-500/5' : ''
+                  }`}>
+                    {/* Day header row */}
+                    <div className={`flex items-center gap-3 px-4 py-2.5 ${isToday ? 'bg-ventoux-500/[0.06]' : 'bg-white/[0.02]'}`}>
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-display font-bold text-sm ${
+                        isToday ? 'bg-ventoux-500/20 text-ventoux-400' : 'bg-white/[0.04] text-stone-500'
+                      }`}>
+                        {format(weekDate, 'd')}
+                      </div>
+                      <span className={`text-sm font-medium ${isToday ? 'text-ventoux-400' : 'text-stone-500'}`}>
+                        {DAYS_FR_LONG[i]}
+                      </span>
+                      {isToday && <span className="text-[10px] text-ventoux-500 bg-ventoux-500/10 px-2 py-0.5 rounded-full font-medium">Aujourd&apos;hui</span>}
+                    </div>
+
+                    {/* Sessions */}
+                    <div className={`px-3 pb-3 pt-1.5 space-y-2 ${isToday ? 'py-2' : ''}`}>
+                      {dayActivity && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 text-green-400 text-xs">
+                          <Check size={12} />
+                          <span className="font-medium">{dayActivity.name}</span>
+                          {dayActivity.tss && <span className="ml-auto text-green-500/60">TSS {Math.round(dayActivity.tss)}</span>}
+                        </div>
+                      )}
+                      {sessions.map((session: TrainingSession) => (
+                        <SessionCard
+                          key={session.id}
+                          session={session}
+                          onClick={() => openSessionDetail(session)}
+                          done={!!dayActivity || !!session.completed}
+                          compact={!isToday}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })
+            })()}
 
             {/* Show rest days count on mobile */}
             {(() => {
@@ -963,9 +1008,13 @@ export default function PlanPage() {
         </>
       )}
 
-      {/* ─── Historique & volume ─────────────────────────────────────────────── */}
-      <div className="border-t border-white/[0.04] mt-8 mb-8" />
-      <VolumeChart plan={plan!} activities={activities} currentWeekIdx={currentWeekIdx} onWeekSelect={setCurrentWeekIdx} />
+        </>
+      )}
+
+      {/* ─── Tab: Coach ──────────────────────────────────────────────────── */}
+      {activeTab === 'coach' && (
+        <CoachChat plan={plan!} onPlanUpdate={(weeks) => setPlan({ ...plan!, weeks })} fullPage />
+      )}
 
       {/* ─── Session detail slide-over ─────────────────────────────────────────── */}
       {selectedSession && (
@@ -1271,8 +1320,10 @@ export default function PlanPage() {
         </div>
       )}
 
-      {/* ─── Coach chat ──────────────────────────────────────────────────────── */}
-      <CoachChat plan={plan!} onPlanUpdate={(weeks) => setPlan({ ...plan!, weeks })} />
+      {/* ─── Coach chat (floating widget, hidden when coach tab is active) ─── */}
+      {activeTab !== 'coach' && (
+        <CoachChat plan={plan!} onPlanUpdate={(weeks) => setPlan({ ...plan!, weeks })} />
+      )}
 
       {/* Slide-in animation */}
       <style jsx>{`
