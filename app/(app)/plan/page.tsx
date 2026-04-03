@@ -621,14 +621,14 @@ export default function PlanPage() {
                   {actualWeekHours > 0 ? `${actualWeekHours}` : '—'}
                   <span className="text-stone-600 text-xs font-normal"> / {weekTotalHours}h</span>
                 </p>
-                <p className="text-stone-600 text-[10px] uppercase tracking-widest">Volume</p>
+                <p className="text-stone-600 text-xs uppercase tracking-widest">Volume</p>
               </div>
               <div>
                 <p className="font-display text-lg font-bold text-summit-light">
                   {actualWeekTss > 0 ? actualWeekTss : '—'}
                   <span className="text-stone-600 text-xs font-normal"> / {weekTotalTss}</span>
                 </p>
-                <p className="text-stone-600 text-[10px] uppercase tracking-widest"><Term term="TSS">TSS</Term></p>
+                <p className="text-stone-600 text-xs uppercase tracking-widest"><Term term="TSS">TSS</Term></p>
               </div>
             </div>
             <GlossaryButton />
@@ -732,7 +732,7 @@ export default function PlanPage() {
                 const isActive = currentPhase?.type === phase.type && currentPhase?.startWeek === phase.startWeek
                 return (
                   <div key={`label-${phase.type}-${phase.startWeek}`} style={{ width: `${widthPct}%` }} className="text-center">
-                    <span className={`text-[10px] ${isActive ? 'text-stone-300 font-medium' : 'text-stone-600'}`}>
+                    <span className={`text-xs ${isActive ? 'text-stone-300 font-medium' : 'text-stone-600'}`}>
                       {phase.name}
                     </span>
                   </div>
@@ -753,7 +753,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.ctl > 60 ? 'text-green-400' : latestPmc.ctl > 30 ? 'text-amber-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.ctl)}
             </p>
-            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-600 text-xs uppercase tracking-widest mt-0.5">
               <Term term="CTL">CTL</Term> · Fitness
             </p>
           </div>
@@ -761,7 +761,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.atl > latestPmc.ctl * 1.3 ? 'text-red-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.atl)}
             </p>
-            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-600 text-xs uppercase tracking-widest mt-0.5">
               <Term term="ATL">ATL</Term> · Fatigue
             </p>
           </div>
@@ -769,7 +769,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.tsb > 5 ? 'text-green-400' : latestPmc.tsb < -20 ? 'text-red-400' : 'text-amber-400'}`}>
               {latestPmc.tsb > 0 ? '+' : ''}{Math.round(latestPmc.tsb)}
             </p>
-            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-600 text-xs uppercase tracking-widest mt-0.5">
               <Term term="TSB">TSB</Term> · {latestPmc.tsb > 5 ? 'Reposé' : latestPmc.tsb < -20 ? 'Fatigué' : 'Forme'}
             </p>
           </div>
@@ -838,7 +838,7 @@ export default function PlanPage() {
                   {/* Day content */}
                   <div className="flex-1 p-1.5 space-y-1.5">
                     {dayActivity && (
-                      <div className="px-2 py-1 rounded-lg bg-green-500/10 text-[10px] text-green-400 flex items-center gap-1">
+                      <div className="px-2 py-1 rounded-lg bg-green-500/10 text-xs text-green-400 flex items-center gap-1">
                         <Check size={8} />
                         <span className="truncate">{dayActivity.name}</span>
                       </div>
@@ -887,7 +887,7 @@ export default function PlanPage() {
                     <span className={`text-sm font-medium ${isToday ? 'text-ventoux-400' : 'text-stone-500'}`}>
                       {DAYS_FR_LONG[i]}
                     </span>
-                    {isToday && <span className="text-[10px] text-ventoux-500 bg-ventoux-500/10 px-2 py-0.5 rounded-full">Aujourd'hui</span>}
+                    {isToday && <span className="text-xs text-ventoux-500 bg-ventoux-500/10 px-2 py-0.5 rounded-full">Aujourd'hui</span>}
                   </div>
 
                   {/* Sessions */}
@@ -1031,7 +1031,7 @@ export default function PlanPage() {
 
                       {/* Completion badge */}
                       {hasActual && totalSessions > 0 && (
-                        <div className={`text-[9px] font-medium px-1 rounded ${
+                        <div className={`text-xs font-medium px-1 rounded ${
                           completionPct >= 80 ? 'text-green-400' : completionPct > 0 ? 'text-amber-400' : 'text-stone-600'
                         }`}>
                           {doneSessions}/{totalSessions}
@@ -1039,10 +1039,10 @@ export default function PlanPage() {
                       )}
 
                       {/* Labels */}
-                      <p className={`text-[10px] font-mono font-bold ${isSelected ? 'text-ventoux-400' : isCurrent ? 'text-summit-light' : 'text-stone-600'}`}>
+                      <p className={`text-xs font-mono font-bold ${isSelected ? 'text-ventoux-400' : isCurrent ? 'text-summit-light' : 'text-stone-600'}`}>
                         S{week.weekNumber}
                       </p>
-                      <p className={`text-[9px] ${isSelected ? 'text-stone-400' : 'text-stone-700'}`}>{plannedHrs}h</p>
+                      <p className={`text-xs ${isSelected ? 'text-stone-400' : 'text-stone-700'}`}>{plannedHrs}h</p>
                       <p className={`text-[8px] font-mono ${hasActual && actualTss > 0 ? (actualTss >= plannedTss * 0.8 ? 'text-green-500/70' : 'text-amber-500/70') : 'text-stone-700'}`}>
                         {hasActual && actualTss > 0 ? `${Math.round(actualTss)}` : plannedTss > 0 ? `${Math.round(plannedTss)}` : ''}{(hasActual && actualTss > 0) || plannedTss > 0 ? ' TSS' : ''}
                       </p>
@@ -1056,7 +1056,7 @@ export default function PlanPage() {
                 })}
               </div>
               {/* Legend */}
-              <div className="flex items-center gap-4 mt-2 text-[10px] text-stone-600">
+              <div className="flex items-center gap-4 mt-2 text-xs text-stone-600">
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-stone-800 inline-block" /> Prévu</span>
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500 inline-block" /> Réalisé</span>
               </div>
@@ -1075,15 +1075,15 @@ export default function PlanPage() {
                         <p className="text-xs font-medium text-stone-400 capitalize">{label}</p>
                         <div className="flex items-baseline gap-2">
                           <span className="font-display text-lg font-bold text-summit-light">{Math.round(m.actualHrs * 10) / 10}h</span>
-                          <span className="text-[10px] text-stone-600">/ {Math.round(m.plannedHrs * 10) / 10}h</span>
+                          <span className="text-xs text-stone-600">/ {Math.round(m.plannedHrs * 10) / 10}h</span>
                         </div>
                         <div className="flex items-baseline gap-2">
                           <span className="text-xs text-summit-light font-medium">{Math.round(m.actualTss)} <span className="text-stone-600">TSS</span></span>
-                          <span className="text-[10px] text-stone-600">/ {Math.round(m.plannedTss)}</span>
+                          <span className="text-xs text-stone-600">/ {Math.round(m.plannedTss)}</span>
                         </div>
                         {m.total > 0 && (
                           <div>
-                            <div className="flex justify-between text-[10px] mb-1">
+                            <div className="flex justify-between text-xs mb-1">
                               <span className="text-stone-600">Complétion</span>
                               <span className={pct >= 80 ? 'text-green-400' : pct > 0 ? 'text-amber-400' : 'text-stone-600'}>{pct}%</span>
                             </div>
@@ -1110,8 +1110,7 @@ export default function PlanPage() {
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedSession(null)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-md bg-stone-950 border-l border-white/[0.06] h-full overflow-y-auto shadow-2xl animate-in"
-            style={{ animation: 'slideInRight 0.3s ease-out' }}
+            className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-md bg-stone-950 border-l border-white/[0.06] h-full overflow-y-auto shadow-2xl animate-slide-in-right"
             onClick={e => e.stopPropagation()}
           >
             {/* Session header */}
@@ -1137,17 +1136,17 @@ export default function PlanPage() {
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold text-summit-light">{selectedSession.duration}<span className="text-xs text-stone-500">min</span></p>
-                  <p className="text-[10px] text-stone-600 uppercase">Durée</p>
+                  <p className="text-xs text-stone-600 uppercase">Durée</p>
                 </div>
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold text-summit-light">{selectedSession.tssTarget || '—'}</p>
-                  <p className="text-[10px] text-stone-600 uppercase"><Term term="TSS">TSS</Term></p>
+                  <p className="text-xs text-stone-600 uppercase"><Term term="TSS">TSS</Term></p>
                 </div>
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold" style={{ color: ZONE_COLORS[selectedSession.intensityZone] || '#888' }}>
                     Z{selectedSession.intensityZone}
                   </p>
-                  <p className="text-[10px] text-stone-600 uppercase">Zone</p>
+                  <p className="text-xs text-stone-600 uppercase">Zone</p>
                 </div>
               </div>
 
@@ -1233,7 +1232,7 @@ export default function PlanPage() {
 
                         {mywhooshWorkout.steps?.length > 0 && (
                           <div>
-                            <p className="text-[10px] uppercase text-stone-600 mb-1.5">Structure</p>
+                            <p className="text-xs uppercase text-stone-600 mb-1.5">Structure</p>
                             <div className="flex gap-[1px] h-8 rounded-lg overflow-hidden">
                               {mywhooshWorkout.steps.slice(0, 30).map((step: any, i: number) => {
                                 const power = step.Power || 0
@@ -1256,7 +1255,7 @@ export default function PlanPage() {
                           </div>
                         )}
 
-                        <p className="text-[10px] text-cyan-500/40">
+                        <p className="text-xs text-cyan-500/40">
                           Cherchez "{selectedSession.mywhooshWorkoutName}" dans MyWhoosh
                         </p>
                       </div>
@@ -1310,10 +1309,10 @@ export default function PlanPage() {
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                {isBest && <span className="text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-medium">Recommandé</span>}
+                                {isBest && <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-medium">Recommandé</span>}
                                 <h5 className="text-sm font-medium text-summit-light truncate">{suggestion.sector.name}</h5>
                               </div>
-                              <p className="text-[11px] text-stone-500 mt-0.5">{suggestion.route.name}</p>
+                              <p className="text-xs text-stone-500 mt-0.5">{suggestion.route.name}</p>
                             </div>
                             <div className={`text-center px-2 py-1 rounded-lg ${scoreBg} flex-shrink-0`}>
                               <p className={`text-sm font-bold ${scoreColor}`}>{suggestion.weather.score}</p>
@@ -1322,14 +1321,14 @@ export default function PlanPage() {
                           </div>
 
                           {/* Route info */}
-                          <div className="flex items-center gap-3 text-[11px] text-stone-500 mb-2">
+                          <div className="flex items-center gap-3 text-xs text-stone-500 mb-2">
                             <span>{suggestion.route.distance}km</span>
                             <span>{suggestion.route.elevation}m D+</span>
                             <span>~{Math.round(suggestion.route.duration / 60)}h{suggestion.route.duration % 60 > 0 ? `${String(suggestion.route.duration % 60).padStart(2, '0')}` : ''}</span>
                           </div>
 
                           {/* Weather */}
-                          <div className="flex items-center gap-2 text-[11px] mb-2">
+                          <div className="flex items-center gap-2 text-xs mb-2">
                             <Thermometer size={10} className="text-stone-500" />
                             <span className="text-stone-400">{suggestion.weather.temp}°C</span>
                             <Wind size={10} className="text-stone-500" />
@@ -1341,13 +1340,13 @@ export default function PlanPage() {
                           {suggestion.weather.reasons.length > 0 && (
                             <div className="flex flex-wrap gap-1 mb-2">
                               {suggestion.weather.reasons.map((r: string, ri: number) => (
-                                <span key={ri} className="text-[9px] bg-white/[0.04] text-stone-500 px-1.5 py-0.5 rounded">{r}</span>
+                                <span key={ri} className="text-xs bg-white/[0.04] text-stone-500 px-1.5 py-0.5 rounded">{r}</span>
                               ))}
                             </div>
                           )}
 
                           {/* Train info */}
-                          <div className="flex items-center gap-1.5 text-[10px] text-stone-600 mb-2.5">
+                          <div className="flex items-center gap-1.5 text-xs text-stone-600 mb-2.5">
                             <Train size={10} />
                             <span>{suggestion.sector.nearestStation}</span>
                             {suggestion.sector.trainFromParis && <span className="text-stone-700">· {suggestion.sector.trainFromParis}</span>}
@@ -1374,7 +1373,7 @@ export default function PlanPage() {
 
               {/* Move to another day */}
               <div>
-                <p className="text-[10px] uppercase text-stone-600 mb-2 tracking-wider">Déplacer</p>
+                <p className="text-xs uppercase text-stone-600 mb-2 tracking-wider">Déplacer</p>
                 <div className="grid grid-cols-7 gap-1">
                   {DAY_KEYS.map((dayKey, i) => {
                     const isCurrent = selectedSession.day === dayKey
@@ -1497,13 +1496,6 @@ export default function PlanPage() {
         </button>
       </div>
 
-      {/* Slide-in animation */}
-      <style jsx>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
     </div>
   )
 }
@@ -1522,7 +1514,7 @@ function SessionCard({ session, onClick, done, compact }: {
     return (
       <button
         onClick={onClick}
-        className={`w-full text-left px-2 py-2 rounded-lg border text-[11px] leading-snug transition-all hover:brightness-125 cursor-pointer ${styles} ${done ? 'opacity-40' : ''}`}
+        className={`w-full text-left px-2 py-2 rounded-lg border text-xs leading-snug transition-all hover:brightness-125 cursor-pointer ${styles} ${done ? 'opacity-40' : ''}`}
       >
         <div className="flex items-center gap-1">
           {done && <Check size={9} className="text-green-400" />}
@@ -1530,7 +1522,7 @@ function SessionCard({ session, onClick, done, compact }: {
         </div>
         <div className="opacity-60 mt-0.5">{session.duration}min</div>
         {session.indoor && session.mywhooshWorkoutName && (
-          <div className="mt-1 text-cyan-400/60 truncate flex items-center gap-0.5 text-[9px]">
+          <div className="mt-1 text-cyan-400/60 truncate flex items-center gap-0.5 text-xs">
             <Bike size={7} />
             <span className="truncate">{session.mywhooshWorkoutName}</span>
           </div>
@@ -1779,7 +1771,7 @@ function StrengthPanel({ description }: { description: string }) {
                 }`}>
                   <div>
                     <div className="text-3xl font-mono font-bold">{formatTime(timeLeft)}</div>
-                    <div className="text-[10px] uppercase opacity-50">{phase === 'rest' ? 'Repos' : 'Go'}</div>
+                    <div className="text-xs uppercase opacity-50">{phase === 'rest' ? 'Repos' : 'Go'}</div>
                   </div>
                 </div>
               </div>
