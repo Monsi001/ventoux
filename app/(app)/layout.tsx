@@ -6,6 +6,7 @@ import { BottomNav } from '@/components/ui/BottomNav'
 import { ToastProvider } from '@/components/ui/Toast'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { KeyboardShortcuts } from '@/components/ui/KeyboardShortcuts'
+import { ViewTransition } from '@/components/ui/ViewTransition'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions)
@@ -19,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="mb-4">
             <Breadcrumb />
           </div>
-          {children}
+          <ViewTransition>{children}</ViewTransition>
         </ToastProvider>
       </main>
       <BottomNav />
