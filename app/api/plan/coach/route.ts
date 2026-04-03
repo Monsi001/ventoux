@@ -3,10 +3,14 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { coachChat } from '@/lib/claude'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
+  const { success } = rateLimit(`chat:${session.user.id}`, 10, 60_000)
+  if (!success) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 })
 
   const { planId, message } = await req.json()
 

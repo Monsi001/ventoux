@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendPasswordResetEmail, generateToken } from '@/lib/email'
 import { addHours } from 'date-fns'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: Request) {
+  const ip = req.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`forgot:${ip}`, 3, 60_000)
+  if (!success) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 })
+
   try {
     const { email } = await req.json()
 
