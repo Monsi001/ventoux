@@ -403,9 +403,33 @@ export default function PlanPage() {
     }
   }
 
-  function getActivityForDay(weekStart: string, dayIdx: number): Activity | undefined {
+  function getActivitiesForDay(weekStart: string, dayIdx: number): Activity[] {
     const dayDate = format(addDays(new Date(weekStart), dayIdx), 'yyyy-MM-dd')
-    return activities.find(a => format(new Date(a.date), 'yyyy-MM-dd') === dayDate)
+    return activities.filter(a => format(new Date(a.date), 'yyyy-MM-dd') === dayDate)
+  }
+
+  // Match activity types to session types
+  const SESSION_TO_ACTIVITY_TYPE: Record<string, string[]> = {
+    ENDURANCE: ['RIDE', 'VIRTUAL_RIDE'],
+    TEMPO: ['RIDE', 'VIRTUAL_RIDE'],
+    THRESHOLD: ['RIDE', 'VIRTUAL_RIDE'],
+    VO2MAX: ['RIDE', 'VIRTUAL_RIDE'],
+    SWEET_SPOT: ['RIDE', 'VIRTUAL_RIDE'],
+    RECOVERY: ['RIDE', 'VIRTUAL_RIDE'],
+    LONG_RIDE: ['RIDE'],
+    RACE_SIM: ['RIDE', 'VIRTUAL_RIDE'],
+    VIRTUAL_RIDE: ['VIRTUAL_RIDE', 'RIDE'],
+    STRENGTH: ['STRENGTH'],
+    REST: [],
+  }
+
+  function matchSessionToActivity(session: TrainingSession, dayActivities: Activity[]): Activity | undefined {
+    if (dayActivities.length === 0) return undefined
+    // Direct match by activityId if already linked
+    if (session.activityId) return dayActivities.find(a => a.id === session.activityId)
+    // Match by compatible activity type
+    const compatibleTypes = SESSION_TO_ACTIVITY_TYPE[session.type] || ['RIDE', 'VIRTUAL_RIDE']
+    return dayActivities.find(a => compatibleTypes.includes(a.type))
   }
 
   async function markSessionDone(session: TrainingSession) {
@@ -932,7 +956,7 @@ export default function PlanPage() {
               const sessions = currentWeek.sessions?.filter((s: TrainingSession) => s.day === dayKey) || []
               const weekDate = addDays(new Date(currentWeek.weekStart), i)
               const isToday = format(weekDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-              const dayActivity = getActivityForDay(currentWeek.weekStart, i)
+              const dayActivities = getActivitiesForDay(currentWeek.weekStart, i)
 
               return (
                 <div
@@ -957,23 +981,36 @@ export default function PlanPage() {
 
                   {/* Day content */}
                   <div className="flex-1 p-1.5 space-y-1.5">
-                    {dayActivity && (
-                      <div className="px-2 py-1 rounded-lg bg-green-500/10 text-[10px] text-green-400 flex items-center gap-1">
+                    {sessions.map((session: TrainingSession) => {
+                      const matched = matchSessionToActivity(session, dayActivities)
+                      return (
+                        <div key={session.id}>
+                          <SessionCard
+                            session={session}
+                            onClick={() => openSessionDetail(session)}
+                            done={!!matched || !!session.completed}
+                            compact
+                            draggable
+                          />
+                          {matched && (
+                            <div className="px-2 py-1 rounded-lg bg-green-500/10 text-[10px] text-green-400 flex items-center gap-1 mt-0.5">
+                              <Check size={8} />
+                              <span className="truncate">{matched.name}</span>
+                              {matched.tss && <span className="ml-auto opacity-60">TSS {Math.round(matched.tss)}</span>}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {/* Activities without a matching session */}
+                    {dayActivities.filter(a => !sessions.some(s => matchSessionToActivity(s, [a]))).map(a => (
+                      <div key={a.id} className="px-2 py-1 rounded-lg bg-blue-500/10 text-[10px] text-blue-400 flex items-center gap-1">
                         <Check size={8} />
-                        <span className="truncate">{dayActivity.name}</span>
+                        <span className="truncate">{a.name}</span>
+                        {a.tss && <span className="ml-auto opacity-60">TSS {Math.round(a.tss)}</span>}
                       </div>
-                    )}
-                    {sessions.map((session: TrainingSession) => (
-                      <SessionCard
-                        key={session.id}
-                        session={session}
-                        onClick={() => openSessionDetail(session)}
-                        done={!!dayActivity || !!session.completed}
-                        compact
-                        draggable
-                      />
                     ))}
-                    {sessions.length === 0 && !dayActivity && (
+                    {sessions.length === 0 && dayActivities.length === 0 && (
                       <div className="flex items-center justify-center h-full text-stone-800 text-xs">
                         Repos
                       </div>
@@ -1000,9 +1037,9 @@ export default function PlanPage() {
                 const sessions = currentWeek.sessions?.filter((s: TrainingSession) => s.day === dayKey) || []
                 const weekDate = addDays(new Date(currentWeek.weekStart), i)
                 const isToday = format(weekDate, 'yyyy-MM-dd') === todayStr
-                const dayActivity = getActivityForDay(currentWeek.weekStart, i)
+                const dayActivities = getActivitiesForDay(currentWeek.weekStart, i)
 
-                if (sessions.length === 0 && !dayActivity) return null
+                if (sessions.length === 0 && dayActivities.length === 0) return null
 
                 return (
                   <div key={dayKey} className={`rounded-xl overflow-hidden ${
@@ -1023,21 +1060,33 @@ export default function PlanPage() {
 
                     {/* Sessions */}
                     <div className={`px-3 pb-3 pt-1.5 space-y-2 ${isToday ? 'py-2' : ''}`}>
-                      {dayActivity && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/8 text-green-400 text-xs">
-                          <Check size={12} />
-                          <span className="font-medium">{dayActivity.name}</span>
-                          {dayActivity.tss && <span className="ml-auto text-green-500/60">TSS {Math.round(dayActivity.tss)}</span>}
+                      {sessions.map((session: TrainingSession) => {
+                        const matched = matchSessionToActivity(session, dayActivities)
+                        return (
+                          <div key={session.id}>
+                            <SessionCard
+                              session={session}
+                              onClick={() => openSessionDetail(session)}
+                              done={!!matched || !!session.completed}
+                              compact={!isToday}
+                            />
+                            {matched && (
+                              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 text-xs mt-1">
+                                <Check size={10} />
+                                <span className="font-medium truncate">{matched.name}</span>
+                                {matched.tss && <span className="ml-auto opacity-60">TSS {Math.round(matched.tss)}</span>}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                      {/* Unmatched activities */}
+                      {dayActivities.filter(a => !sessions.some(s => matchSessionToActivity(s, [a]))).map(a => (
+                        <div key={a.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs">
+                          <Check size={10} />
+                          <span className="font-medium truncate">{a.name}</span>
+                          {a.tss && <span className="ml-auto opacity-60">TSS {Math.round(a.tss)}</span>}
                         </div>
-                      )}
-                      {sessions.map((session: TrainingSession) => (
-                        <SessionCard
-                          key={session.id}
-                          session={session}
-                          onClick={() => openSessionDetail(session)}
-                          done={!!dayActivity || !!session.completed}
-                          compact={!isToday}
-                        />
                       ))}
                     </div>
                   </div>
@@ -1049,8 +1098,8 @@ export default function PlanPage() {
             {(() => {
               const activeDays = DAY_KEYS.filter((dayKey, i) => {
                 const sessions = currentWeek.sessions?.filter((s: TrainingSession) => s.day === dayKey) || []
-                const dayActivity = getActivityForDay(currentWeek.weekStart, i)
-                return sessions.length > 0 || dayActivity
+                const dayActs = getActivitiesForDay(currentWeek.weekStart, i)
+                return sessions.length > 0 || dayActs.length > 0
               }).length
               const restDays = 7 - activeDays
               return restDays > 0 ? (
