@@ -940,9 +940,20 @@ export default function PlanPage() {
 
       {/* Week notes */}
       {currentWeek?.notes && (
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-white/[0.03] mb-5">
-          <Info size={14} className="text-stone-500 mt-0.5 flex-shrink-0" />
-          <p className="text-stone-400 text-sm">{currentWeek.notes}</p>
+        <div className="card p-4 mb-5 border-l-4 border-blue-500/40">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Info size={12} className="text-blue-400" />
+            </div>
+            <h3 className="font-display text-xs font-bold text-summit-light uppercase tracking-wider">
+              Notes semaine {currentWeek.weekNumber}
+            </h3>
+          </div>
+          <div className="text-sm text-stone-300 leading-relaxed space-y-1">
+            {currentWeek.notes.split(/\.\s+/).filter(Boolean).map((sentence: string, i: number) => (
+              <p key={i}>• {sentence.trim().replace(/\.$/, '')}</p>
+            ))}
+          </div>
         </div>
       )}
 
