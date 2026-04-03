@@ -1305,27 +1305,31 @@ export default function PlanPage() {
               )}
 
               {/* MyWhoosh workout */}
-              {selectedSession.mywhooshWorkoutName && selectedSession.indoor && (
+              {(selectedSession.mywhooshWorkoutName || mywhooshWorkout) && selectedSession.indoor && (
                 <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/15 overflow-hidden">
                   <div className="px-4 py-3 flex items-center gap-2 border-b border-cyan-500/10">
                     <Bike size={14} className="text-cyan-400" />
                     <h4 className="text-sm font-semibold text-cyan-300 flex-1">Workout MyWhoosh</h4>
                   </div>
                   <div className="px-4 py-3">
-                    <p className="text-summit-light font-medium">{selectedSession.mywhooshWorkoutName}</p>
+                    {/* Workout name — prominent, copyable */}
+                    <div className="bg-cyan-500/10 rounded-lg px-3 py-2 mb-3">
+                      <p className="text-[10px] uppercase text-cyan-400/60 tracking-wider mb-0.5">Nom à chercher dans MyWhoosh</p>
+                      <p className="text-cyan-200 font-bold text-base">{mywhooshWorkout?.name || selectedSession.mywhooshWorkoutName}</p>
+                    </div>
 
                     {loadingWorkout && (
-                      <div className="flex items-center gap-2 mt-3 text-stone-500 text-xs">
+                      <div className="flex items-center gap-2 text-stone-500 text-xs">
                         <Loader2 size={12} className="animate-spin" /> Chargement...
                       </div>
                     )}
 
                     {mywhooshWorkout && (
-                      <div className="mt-3 space-y-3">
+                      <div className="space-y-3">
                         {mywhooshWorkout.description && (
                           <p className="text-stone-400 text-xs leading-relaxed">{mywhooshWorkout.description}</p>
                         )}
-                        <div className="flex gap-3 text-xs text-stone-500">
+                        <div className="flex gap-3 text-xs text-stone-400">
                           {mywhooshWorkout.tss && <span>TSS {mywhooshWorkout.tss}</span>}
                           {mywhooshWorkout.intensityFactor && <span>IF {mywhooshWorkout.intensityFactor.toFixed(2)}</span>}
                           <span>{Math.round(mywhooshWorkout.duration / 60)}min</span>
@@ -1335,7 +1339,7 @@ export default function PlanPage() {
                         {mywhooshWorkout.steps?.length > 0 && (
                           <div>
                             <p className="text-[10px] uppercase text-stone-400 mb-1.5">Structure</p>
-                            <div className="flex gap-[1px] h-8 rounded-lg overflow-hidden">
+                            <div className="flex gap-[1px] h-10 rounded-lg overflow-hidden">
                               {mywhooshWorkout.steps.slice(0, 30).map((step: any, i: number) => {
                                 const power = step.Power || 0
                                 const hue = power <= 0.6 ? 200 : power <= 0.75 ? 160 : power <= 0.9 ? 50 : power <= 1.0 ? 30 : power <= 1.2 ? 0 : 280
@@ -1356,10 +1360,6 @@ export default function PlanPage() {
                             </div>
                           </div>
                         )}
-
-                        <p className="text-[10px] text-cyan-500/40">
-                          Cherchez "{selectedSession.mywhooshWorkoutName}" dans MyWhoosh
-                        </p>
                       </div>
                     )}
                   </div>
