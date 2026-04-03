@@ -691,18 +691,21 @@ export default function PlanPage() {
             <div className="min-w-0">
               <h1 className="font-display text-xl md:text-2xl font-bold text-summit-light uppercase tracking-wide truncate">
                 Semaine {currentWeek?.weekNumber || currentWeekIdx + 1}
-                {currentWeek?.phase && (
-                  <span className={`ml-2 text-sm px-2 py-0.5 rounded-md align-middle ${PHASE_COLORS[getPhaseKey(currentWeek.phase)] || ''}`}>
-                    {currentWeek.phase}
-                  </span>
-                )}
               </h1>
               {currentWeek && (
-                <p className="text-stone-500 text-xs">
-                  {format(new Date(currentWeek.weekStart), 'dd MMM', { locale: fr })}
-                  {' — '}
-                  {format(addDays(new Date(currentWeek.weekStart), 6), 'dd MMM yyyy', { locale: fr })}
-                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {currentWeek.phase && (
+                    <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${PHASE_COLORS[getPhaseKey(currentWeek.phase)] || ''}`}>
+                      {/* Lookup friendly name from plan.phases, fallback to week.phase */}
+                      {plan!.phases?.find((p: any) => currentWeek.weekNumber >= p.startWeek && currentWeek.weekNumber <= p.endWeek)?.name || currentWeek.phase}
+                    </span>
+                  )}
+                  <span className="text-stone-400 text-xs">
+                    {format(new Date(currentWeek.weekStart), 'd MMM', { locale: fr })}
+                    {' — '}
+                    {format(addDays(new Date(currentWeek.weekStart), 6), 'd MMM yyyy', { locale: fr })}
+                  </span>
+                </div>
               )}
             </div>
             <button
