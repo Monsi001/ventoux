@@ -16,6 +16,7 @@ interface GeneratePlanInput {
   currentCTL?: number
   currentATL?: number
   startDate?: string  // ISO date — début du plan (permet d'antidater)
+  includeStrength?: boolean  // inclure séances renfo (défaut: true)
 }
 
 export async function generateTrainingPlan(input: GeneratePlanInput): Promise<{
@@ -23,7 +24,7 @@ export async function generateTrainingPlan(input: GeneratePlanInput): Promise<{
   phases: TrainingPhase[]
   aiNotes: string
 }> {
-  const { user, race, recentActivities, constraints, currentCTL = 40, currentATL = 40, startDate } = input
+  const { user, race, recentActivities, constraints, currentCTL = 40, currentATL = 40, startDate, includeStrength = true } = input
 
   const raceDate = new Date(race.date)
   const now = new Date()
@@ -68,11 +69,11 @@ Course: ${race.name}, ${format(raceDate, 'dd/MM/yyyy')}, ${race.distance}km, ${r
 Plan total: ${totalWeeks} semaines (début ${format(planStart, 'dd/MM/yyyy')}). On est en semaine ${currentWeekNumber}/${totalWeeks}, il reste ${weeksRemaining} semaines.
 Volume récent: ~${weeklyHours}h/sem. Activités récentes: ${activitySummary || 'aucune'}.
 Adapte la phase et l'intensité au fait qu'on est en semaine ${currentWeekNumber} du plan. Assure une progression de charge cohérente sur les 4 semaines (3 semaines montée + 1 semaine récup si pertinent).
-Génère TOUTES les phases (du début à la fin du plan) et les séances des ${NUM_WEEKS} SEMAINES suivantes: ${weeksListStr}. CHAQUE semaine: 3 séances vélo + 1 séance STRENGTH = 4 séances total. Répartition type: 1 intensité (THRESHOLD/VO2MAX/SWEET_SPOT), 1 endurance (ENDURANCE/TEMPO/LONG_RIDE), 1 récup ou endurance courte. JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Descriptions vélo: 5 mots max. STRENGTH: exercices détaillés (nom, séries x reps, repos).
+Génère TOUTES les phases (du début à la fin du plan) et les séances des ${NUM_WEEKS} SEMAINES suivantes: ${weeksListStr}. ${includeStrength ? 'CHAQUE semaine: 3 séances vélo + 1 séance STRENGTH = 4 séances total.' : 'CHAQUE semaine: 3 séances vélo uniquement, PAS de séance STRENGTH.'} Répartition type: 1 intensité (THRESHOLD/VO2MAX/SWEET_SPOT), 1 endurance (ENDURANCE/TEMPO/LONG_RIDE), 1 récup ou endurance courte. JAMAIS 2 séances vélo le même jour${includeStrength ? ' (seul combo autorisé: 1 vélo + 1 STRENGTH)' : ''}. Descriptions vélo: 5 mots max.${includeStrength ? ' STRENGTH: exercices détaillés (nom, séries x reps, repos).' : ''}
 Types vélo: ENDURANCE, TEMPO, THRESHOLD, VO2MAX, SWEET_SPOT, RECOVERY, LONG_RIDE, RACE_SIM.
 ${ftpTestStr}
 JSON compact, format EXACT:
-{"phases":[{"name":"Base","type":"BASE","startWeek":1,"endWeek":4,"description":"...","weeklyHoursTarget":8}],"weeks":[{"weekNumber":${weekStarts[0].num},"weekStart":"${weekStarts[0].start}","phase":"BUILD","totalHours":6,"totalTss":300,"notes":"...","sessions":[{"id":"w${weekStarts[0].num}-s1","day":"TUE","type":"THRESHOLD","name":"Seuil","duration":60,"description":"2x20min au seuil","tssTarget":75,"intensityZone":4,"indoor":true},{"id":"w${weekStarts[0].num}-s2","day":"WED","type":"STRENGTH","name":"Renfo jambes","duration":40,"description":"Squats 4x12, Fentes 3x10/j (60s repos), Gainage planche 3x45s, Pont fessier 3x20, Extensions lombaires 3x15","tssTarget":0,"intensityZone":1,"indoor":true},{"id":"w${weekStarts[0].num}-s3","day":"THU","type":"ENDURANCE","name":"Z2","duration":75,"description":"Z2 cadence haute","tssTarget":55,"intensityZone":2,"indoor":true},{"id":"w${weekStarts[0].num}-s4","day":"SAT","type":"SWEET_SPOT","name":"Sweet spot","duration":90,"description":"3x15min sweet spot","tssTarget":85,"intensityZone":3,"indoor":true}]}],"aiNotes":"..."}`
+{"phases":[{"name":"Base","type":"BASE","startWeek":1,"endWeek":4,"description":"...","weeklyHoursTarget":8}],"weeks":[{"weekNumber":${weekStarts[0].num},"weekStart":"${weekStarts[0].start}","phase":"BUILD","totalHours":6,"totalTss":300,"notes":"...","sessions":[{"id":"w${weekStarts[0].num}-s1","day":"TUE","type":"THRESHOLD","name":"Seuil","duration":60,"description":"2x20min au seuil","tssTarget":75,"intensityZone":4,"indoor":true},${includeStrength ? `{"id":"w${weekStarts[0].num}-s2","day":"WED","type":"STRENGTH","name":"Renfo jambes","duration":40,"description":"Squats 4x12, Fentes 3x10/j (60s repos), Gainage planche 3x45s, Pont fessier 3x20, Extensions lombaires 3x15","tssTarget":0,"intensityZone":1,"indoor":true},` : ''}{"id":"w${weekStarts[0].num}-s3","day":"THU","type":"ENDURANCE","name":"Z2","duration":75,"description":"Z2 cadence haute","tssTarget":55,"intensityZone":2,"indoor":true},{"id":"w${weekStarts[0].num}-s4","day":"SAT","type":"SWEET_SPOT","name":"Sweet spot","duration":90,"description":"3x15min sweet spot","tssTarget":85,"intensityZone":3,"indoor":true}]}],"aiNotes":"..."}`
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',

@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-  const { raceId, startDate } = await req.json()
+  const { raceId, startDate, includeStrength = true } = await req.json()
 
   if (!raceId) {
     return NextResponse.json({ error: 'raceId obligatoire' }, { status: 400 })
@@ -79,6 +79,7 @@ export async function POST(req: Request) {
       currentCTL: latestPMC?.ctl,
       currentATL: latestPMC?.atl,
       startDate: planStart.toISOString(),
+      includeStrength,
     })
 
     // Désactiver les anciens plans pour cette course

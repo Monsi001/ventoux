@@ -80,6 +80,7 @@ export default function PlanPage() {
   const [rideSuggestions, setRideSuggestions] = useState<any[] | null>(null)
   const [loadingRide, setLoadingRide] = useState(false)
   const [planStartDate, setPlanStartDate] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
+  const [includeStrength, setIncludeStrength] = useState(true)
 
   useEffect(() => {
     loadData()
@@ -123,7 +124,7 @@ export default function PlanPage() {
       const res = await fetch('/api/plan/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ raceId: selectedRaceId, startDate: planStartDate }),
+        body: JSON.stringify({ raceId: selectedRaceId, startDate: planStartDate, includeStrength }),
       })
 
       if (!res.ok) {
@@ -495,6 +496,17 @@ export default function PlanPage() {
               />
             </div>
             <button
+              onClick={() => setIncludeStrength(v => !v)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm w-full justify-center ${
+                includeStrength
+                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
+                  : 'bg-white/[0.03] border-white/[0.06] text-stone-500'
+              }`}
+            >
+              <Dumbbell size={15} />
+              {includeStrength ? 'Renforcement inclus' : 'Sans renforcement'}
+            </button>
+            <button
               onClick={generatePlan}
               disabled={generating || !selectedRaceId}
               className="btn-primary w-full flex items-center justify-center gap-2"
@@ -588,6 +600,17 @@ export default function PlanPage() {
               </div>
             </div>
             <GlossaryButton />
+            {races.length > 1 && (
+              <select
+                value={selectedRaceId}
+                onChange={e => setSelectedRaceId(e.target.value)}
+                className="input text-xs py-1 px-2 max-w-[160px] [color-scheme:dark]"
+              >
+                {races.map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            )}
             <div className="flex items-center gap-1">
               <Calendar size={14} className="text-stone-600 flex-shrink-0" />
               <input
@@ -597,6 +620,17 @@ export default function PlanPage() {
                 className="input text-xs py-1 px-2 w-[130px] [color-scheme:dark]"
               />
             </div>
+            <button
+              onClick={() => setIncludeStrength(v => !v)}
+              className={`p-2 rounded-lg transition-all ${
+                includeStrength
+                  ? 'text-purple-400 bg-purple-500/10'
+                  : 'text-stone-600 hover:text-stone-400'
+              }`}
+              title={includeStrength ? 'Renfo inclus (cliquer pour exclure)' : 'Sans renfo (cliquer pour inclure)'}
+            >
+              <Dumbbell size={16} />
+            </button>
             <button
               onClick={generatePlan}
               disabled={generating}
