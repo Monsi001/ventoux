@@ -1,4 +1,5 @@
 import { StravaActivity } from '@/types'
+import { ActivityType } from '@prisma/client'
 
 const STRAVA_API = 'https://www.strava.com/api/v3'
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token'
@@ -142,8 +143,8 @@ export function stravaToActivity(s: StravaActivity, userId: string) {
   }
 }
 
-function mapStravaType(type: string) {
-  const map: Record<string, string> = {
+function mapStravaType(type: string): ActivityType {
+  const map: Record<string, ActivityType> = {
     Ride: 'RIDE',
     VirtualRide: 'VIRTUAL_RIDE',
     MountainBikeRide: 'RIDE',
@@ -153,5 +154,5 @@ function mapStravaType(type: string) {
     WeightTraining: 'STRENGTH',
     Workout: 'STRENGTH',
   }
-  return (map[type] || 'OTHER') as any
+  return map[type] || 'OTHER'
 }

@@ -37,7 +37,8 @@ export async function parseGPX(gpxContent: string): Promise<ParsedActivity> {
 
         let totalDistance = 0
         let totalElevGain = 0
-        let allPoints: any[] = []
+        interface GPXPoint { lat: number; lon: number; ele: number; time: Date | null; hr: number; power: number }
+        let allPoints: GPXPoint[] = []
         const hrValues: number[] = []
         const powerValues: number[] = []
 
