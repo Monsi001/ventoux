@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { format, addDays, startOfWeek, differenceInDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Sparkles, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info, Mountain, X, Dumbbell, Bike, Check, Calendar, Play, Pause, SkipForward, RotateCcw, Trash2, Sun, Cloud, MapPin, Download, Train, Wind, Thermometer } from 'lucide-react'
+import { Sparkles, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info, Mountain, X, Dumbbell, Bike, Check, Calendar, Play, Pause, SkipForward, RotateCcw, Trash2, Sun, Cloud, MapPin, Download, Train, Wind, Thermometer, MessageCircle, Send } from 'lucide-react'
 import type { TrainingPlan, TrainingWeek, TrainingSession, Race, UserProfile, Activity } from '@/types'
 import { formatMinutes, calculatePMC } from '@/lib/training'
 import { GlossaryButton, Term } from '@/components/ui/Tooltip'
@@ -81,6 +81,38 @@ export default function PlanPage() {
   const [loadingRide, setLoadingRide] = useState(false)
   const [planStartDate, setPlanStartDate] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [includeStrength, setIncludeStrength] = useState(true)
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatMsg, setChatMsg] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'coach'; text: string }[]>([])
+
+  async function sendCoachMessage() {
+    if (!chatMsg.trim() || !plan) return
+    const msg = chatMsg.trim()
+    setChatMsg('')
+    setChatHistory(h => [...h, { role: 'user', text: msg }])
+    setChatLoading(true)
+
+    try {
+      const res = await fetch('/api/plan/coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: plan.id, message: msg }),
+      })
+      const data = await res.json()
+      if (res.ok && data.weeks) {
+        setPlan({ ...plan, weeks: data.weeks })
+        setChatHistory(h => [...h, { role: 'coach', text: data.reply }])
+        invalidateCache('/api/init')
+      } else {
+        setChatHistory(h => [...h, { role: 'coach', text: data.error || 'Erreur, réessaie.' }])
+      }
+    } catch {
+      setChatHistory(h => [...h, { role: 'coach', text: 'Erreur réseau.' }])
+    } finally {
+      setChatLoading(false)
+    }
+  }
 
   useEffect(() => {
     loadData()
@@ -1375,6 +1407,95 @@ export default function PlanPage() {
           </div>
         </div>
       )}
+
+      {/* ─── Coach chat ──────────────────────────────────────────────────────── */}
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+        {chatOpen && (
+          <div className="w-[340px] max-w-[calc(100vw-2rem)] bg-stone-950 border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-ventoux-gradient flex items-center justify-center">
+                  <Mountain className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-medium text-summit-light">Coach Ventoux</span>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="text-stone-500 hover:text-stone-300 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="h-[280px] overflow-y-auto p-4 space-y-3">
+              {chatHistory.length === 0 && (
+                <div className="text-center py-6">
+                  <p className="text-stone-500 text-sm mb-4">Comment tu te sens aujourd'hui ?</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {['Je suis malade', 'Pas le temps', 'En pleine forme', "J'ai des courbatures"].map(q => (
+                      <button
+                        key={q}
+                        onClick={() => setChatMsg(q)}
+                        className="text-xs px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-stone-400 hover:text-ventoux-400 hover:border-ventoux-500/30 transition-all"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {chatHistory.map((m: { role: string; text: string }, i: number) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm ${
+                    m.role === 'user'
+                      ? 'bg-ventoux-500/20 text-ventoux-200 rounded-br-sm'
+                      : 'bg-white/[0.05] text-stone-300 rounded-bl-sm'
+                  }`}>
+                    {m.text}
+                  </div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="px-3 py-2 rounded-xl bg-white/[0.05] text-stone-500 text-sm">
+                    <Loader2 size={14} className="animate-spin inline mr-1.5" />
+                    Le coach réfléchit…
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <form
+              onSubmit={e => { e.preventDefault(); sendCoachMessage(); }}
+              className="flex items-center gap-2 px-3 py-3 border-t border-white/[0.06]"
+            >
+              <input
+                type="text"
+                value={chatMsg}
+                onChange={e => setChatMsg(e.target.value)}
+                placeholder="Dis quelque chose au coach…"
+                className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-summit-light placeholder:text-stone-600 focus:outline-none focus:border-ventoux-500/40"
+                disabled={chatLoading}
+              />
+              <button
+                type="submit"
+                disabled={chatLoading || !chatMsg.trim()}
+                className="p-2 rounded-xl bg-ventoux-gradient text-white disabled:opacity-30 transition-opacity"
+              >
+                <Send size={14} />
+              </button>
+            </form>
+          </div>
+        )}
+
+        <button
+          onClick={() => setChatOpen((o: boolean) => !o)}
+          className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all ${
+            chatOpen
+              ? 'bg-stone-800 text-stone-400'
+              : 'bg-ventoux-gradient text-white shadow-ventoux hover:scale-105'
+          }`}
+        >
+          {chatOpen ? <X size={20} /> : <MessageCircle size={20} />}
+        </button>
+      </div>
 
       {/* Slide-in animation */}
       <style jsx>{`

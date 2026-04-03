@@ -312,6 +312,110 @@ JSON: {"weeks":[même structure, mêmes jours],"explanation":"1-2 phrases"}`
   return { weeks: enrichedWeeks, explanation: result.explanation || '' }
 }
 
+// ─── Coach chat — ajustement en langage naturel ─────────────────────────────
+
+interface CoachChatInput {
+  message: string
+  weeks: TrainingWeek[]
+  userFtp: number
+  phase: string
+  todayDay: string  // MON, TUE, etc.
+}
+
+export async function coachChat(input: CoachChatInput): Promise<{
+  weeks: TrainingWeek[]
+  reply: string
+}> {
+  const { message, weeks, userFtp, phase, todayDay } = input
+
+  const weeksSummary = weeks.map(w => ({
+    weekNumber: w.weekNumber,
+    weekStart: w.weekStart,
+    phase: w.phase,
+    sessions: w.sessions.map(s => ({
+      id: s.id, day: s.day, type: s.type, name: s.name,
+      duration: s.duration, tssTarget: s.tssTarget,
+      intensityZone: s.intensityZone, indoor: s.indoor,
+      ...(s.type === 'STRENGTH' ? { description: s.description } : {}),
+    })),
+  }))
+
+  const prompt = `Tu es un coach cycliste bienveillant et pragmatique. L'athlète te parle via un chat rapide.
+FTP: ${userFtp}W. Phase: ${phase}. Aujourd'hui: ${todayDay}.
+
+L'athlète dit: "${message}"
+
+Adapte le plan de la semaine en conséquence. Exemples:
+- "je suis malade" → passe les séances restantes en RECOVERY ou REST, réduis durée/TSS
+- "pas le temps aujourd'hui" → supprime ou raccourcit la séance du jour (${todayDay}), redistribue si pertinent
+- "je me sens en forme" → augmente légèrement l'intensité ou la durée des prochaines séances
+- "j'ai mal aux genoux" → adapte le renfo, évite les impacts, favorise le vélo doux
+- "je peux rajouter une séance" → ajoute une séance adaptée à la phase
+
+Règles:
+- JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH)
+- Garde les mêmes id et jours (day) pour les séances existantes
+- Tu peux changer type, durée, tssTarget, intensityZone, description, indoor
+- Tu peux mettre une séance en REST (durée 0, tss 0) pour l'annuler
+- STRENGTH: exercices détaillés si modifiés
+- Réponds en français, ton amical et encourageant
+
+Semaines actuelles:
+${JSON.stringify(weeksSummary)}
+
+JSON EXACT: {"weeks":[même structure],"reply":"ta réponse courte au coach (2-3 phrases max, encourageant)"}`
+
+  const response = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 4000,
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: '{' },
+    ],
+  })
+
+  const content = response.content[0]
+  if (content.type !== 'text') throw new Error('Réponse Claude inattendue')
+
+  const rawText = '{' + content.text
+  const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+  const result = JSON.parse(cleaned)
+
+  if (!result.weeks) throw new Error('Structure invalide')
+
+  // Valider : préserver les jours originaux
+  const validatedWeeks = result.weeks.map((adjustedWeek: TrainingWeek, wIdx: number) => {
+    const originalWeek = weeks[wIdx]
+    if (!originalWeek) return adjustedWeek
+
+    const validatedSessions = originalWeek.sessions.map(originalSession => {
+      const adjusted = adjustedWeek.sessions?.find((s: TrainingSession) => s.id === originalSession.id)
+      if (!adjusted) return originalSession
+
+      return {
+        ...originalSession,
+        type: adjusted.type || originalSession.type,
+        name: adjusted.name || originalSession.name,
+        duration: adjusted.duration ?? originalSession.duration,
+        tssTarget: adjusted.tssTarget ?? originalSession.tssTarget,
+        intensityZone: adjusted.intensityZone ?? originalSession.intensityZone,
+        description: adjusted.description || originalSession.description,
+      }
+    })
+
+    return { ...originalWeek, sessions: validatedSessions }
+  })
+
+  const enrichedWeeks = await Promise.all(
+    validatedWeeks.map(async (week: TrainingWeek) => ({
+      ...week,
+      sessions: await matchWorkoutsToSessions(week.sessions),
+    }))
+  )
+
+  return { weeks: enrichedWeeks, reply: result.reply || '' }
+}
+
 // ─── Analyse d'activité ───────────────────────────────────────────────────────
 
 export async function analyzeActivity(activity: Activity, userFtp: number): Promise<string> {
