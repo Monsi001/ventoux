@@ -14,6 +14,7 @@ import type { Activity as ActivityType, TrainingPlan, Race, UserProfile } from '
 import { cachedFetch } from '@/lib/fetch-cache'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 import { ProgressionCard } from './components/ProgressionCard'
+import { PullToRefresh } from '@/components/ui/PullToRefresh'
 
 const PMCChart = dynamic(() => import('./PMCChart'), {
   ssr: false,
@@ -115,6 +116,7 @@ export default function DashboardPage() {
   const daysUntilRace = race ? differenceInDays(new Date(race.date), today) : null
 
   return (
+    <PullToRefresh onRefresh={loadDashboard}>
     <div className="space-y-10 animate-in">
       {showOnboarding && (
         <OnboardingWizard
@@ -346,6 +348,7 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </PullToRefresh>
   )
 }
 
