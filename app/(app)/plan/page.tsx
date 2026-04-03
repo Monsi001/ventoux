@@ -118,6 +118,18 @@ export default function PlanPage() {
     loadData()
   }, [])
 
+  // Fermer les panels avec Escape
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (chatOpen) { setChatOpen(false); return }
+        if (selectedSession) { setSelectedSession(null); return }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [chatOpen, selectedSession])
+
   async function loadData() {
     setLoading(true)
     const data = await cachedFetch('/api/init?include=plans,races,activities&activityLimit=60')
