@@ -13,6 +13,7 @@ import { fr } from 'date-fns/locale'
 import type { Activity as ActivityType, TrainingPlan, Race, UserProfile } from '@/types'
 import { cachedFetch } from '@/lib/fetch-cache'
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { ProgressionCard } from './components/ProgressionCard'
 
 const PMCChart = dynamic(() => import('./PMCChart'), {
@@ -475,7 +476,15 @@ const StatCard = React.memo(function StatCard({ label, value, sub, icon, color, 
       <div className={`inline-flex p-2 rounded-lg ${colorMap[color]} mb-2`}>
         {icon}
       </div>
-      <div className="stat-value">{value}</div>
+      <div className="stat-value">
+        {(() => {
+          const numMatch = value.match(/^([+-]?)(\d+)(.*)$/)
+          if (numMatch) {
+            return <AnimatedNumber value={parseInt(numMatch[2])} prefix={numMatch[1]} suffix={numMatch[3]} />
+          }
+          return value
+        })()}
+      </div>
       <div className="stat-label">{label}</div>
       {sub && <div className="text-stone-600 text-xs mt-0.5">{sub}</div>}
     </div>
