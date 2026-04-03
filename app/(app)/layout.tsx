@@ -5,6 +5,7 @@ import NavBar from '@/components/ui/NavBar'
 import { BottomNav } from '@/components/ui/BottomNav'
 import { ToastProvider } from '@/components/ui/Toast'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
+import { KeyboardShortcuts } from '@/components/ui/KeyboardShortcuts'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions)
@@ -22,6 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </ToastProvider>
       </main>
       <BottomNav />
+      <KeyboardShortcuts />
     </div>
   )
 }
