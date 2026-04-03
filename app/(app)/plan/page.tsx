@@ -313,6 +313,20 @@ export default function PlanPage() {
     if (indoor) {
       const session = plan.weeks[currentWeekIdx]?.sessions.find(s => s.id === sessionId)
       if (session) {
+        // If already has a MyWhoosh workout, just reload detail
+        if (session.mywhooshWorkoutId) {
+          if (selectedSession?.id === sessionId) {
+            setSelectedSession({ ...selectedSession, indoor: true })
+            loadWorkoutDetail(session.mywhooshWorkoutId)
+          }
+          await fetch('/api/plan/update-session', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId, updates: { indoor: true } }),
+          }).catch(() => {})
+          return
+        }
+        // Otherwise, find a matching workout
         try {
           const res = await fetch(`/api/workouts?sessionType=${session.type}&duration=${session.duration}&tss=${session.tssTarget || ''}&limit=1`)
           if (res.ok) {
@@ -343,14 +357,14 @@ export default function PlanPage() {
         } catch (e) {}
       }
     } else {
+      // Toggle to outdoor — keep mywhoosh link so user can switch back
       if (selectedSession?.id === sessionId) {
-        setSelectedSession({ ...selectedSession, indoor })
-        setMywhooshWorkout(null)
+        setSelectedSession({ ...selectedSession, indoor: false })
       }
       await fetch('/api/plan/update-session', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId, updates: { indoor, mywhooshWorkoutId: null, mywhooshWorkoutName: null } }),
+        body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId, updates: { indoor: false } }),
       }).catch(() => {})
     }
   }
