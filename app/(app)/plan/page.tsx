@@ -310,6 +310,11 @@ export default function PlanPage() {
     })
     setPlan({ ...plan, weeks: updatedWeeks })
 
+    // Update selectedSession immediately so the UI toggles
+    if (selectedSession?.id === sessionId) {
+      setSelectedSession({ ...selectedSession, indoor })
+    }
+
     if (indoor) {
       const session = plan.weeks[currentWeekIdx]?.sessions.find(s => s.id === sessionId)
       if (session) {
