@@ -138,7 +138,7 @@ export default function ActivitiesPage() {
             </button>
           ) : (
             <a href="/api/strava/auth" className="btn-primary flex items-center gap-2">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" role="img" aria-label="Logo Strava">
                 <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066z" />
                 <path d="M9.768 0l2.218 4.28H5.916L9.768 0z" />
                 <path d="M9.768 0L5.916 4.28 0 4.28 9.768 0z" opacity=".8" />
@@ -244,7 +244,12 @@ function ActivityRow({ activity, onTssUpdate, onDelete }: { activity: ActivityTy
   }
 
   return (
-    <div className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors">
+    <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit() } }}
+      className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-ventoux-500/50 focus:ring-inset"
+    >
       <div className="w-9 h-9 rounded-xl bg-white/[0.04] flex items-center justify-center flex-shrink-0">
         <Icon size={18} className="text-stone-400" />
       </div>

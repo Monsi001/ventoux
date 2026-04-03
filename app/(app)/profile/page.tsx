@@ -128,22 +128,22 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="label">Nom complet</label>
-            <input className="input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+            <label htmlFor="profile-name" className="label">Nom complet</label>
+            <input id="profile-name" className="input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
           </div>
           <div>
-            <label className="label">Email</label>
-            <input className="input opacity-50 cursor-not-allowed" value={profile?.email || ''} readOnly />
+            <label htmlFor="profile-email" className="label">Email</label>
+            <input id="profile-email" className="input opacity-50 cursor-not-allowed" value={profile?.email || ''} readOnly />
           </div>
           <div />
           <div>
-            <label className="label">Taille (cm)</label>
-            <input type="number" className="input" placeholder="178" value={form.height}
+            <label htmlFor="profile-height" className="label">Taille (cm)</label>
+            <input id="profile-height" type="number" className="input" placeholder="178" value={form.height}
               onChange={e => setForm(p => ({ ...p, height: e.target.value }))} />
           </div>
           <div>
-            <label className="label">Poids (kg)</label>
-            <input type="number" className="input" placeholder="70" step={0.1} value={form.weight}
+            <label htmlFor="profile-weight" className="label">Poids (kg)</label>
+            <input id="profile-weight" type="number" className="input" placeholder="70" step={0.1} value={form.weight}
               onChange={e => setForm(p => ({ ...p, weight: e.target.value }))} />
           </div>
         </div>
@@ -167,8 +167,8 @@ export default function ProfilePage() {
 
         <div className="flex items-end gap-4 mb-5">
           <div className="flex-1">
-            <label className="label">FTP (watts)</label>
-            <input type="number" className="input" placeholder="250" value={form.ftp}
+            <label htmlFor="profile-ftp" className="label">FTP (watts)</label>
+            <input id="profile-ftp" type="number" className="input" placeholder="250" value={form.ftp}
               onChange={e => setForm(p => ({ ...p, ftp: e.target.value }))} min={100} max={600} />
             {ftpNum > 0 && weightNum > 0 && (
               <p className="text-stone-500 text-xs mt-1">{(ftpNum / weightNum).toFixed(2)} W/kg</p>
@@ -229,7 +229,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center"
               style={{ background: '#FC4C02' }}>
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white" role="img" aria-label="Logo Strava">
                 <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066z" />
                 <path d="M9.768 0l2.218 4.28H5.916L9.768 0z" />
               </svg>
@@ -306,14 +306,14 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label className="label">Max heures/semaine</label>
-            <input type="number" className="input" placeholder="Illimité" step={0.5}
+            <label htmlFor="constraint-max-hours" className="label">Max heures/semaine</label>
+            <input id="constraint-max-hours" type="number" className="input" placeholder="Illimité" step={0.5}
               value={currentWeekConstraint.maxHours}
               onChange={e => setCurrentWeekConstraint((p: any) => ({ ...p, maxHours: e.target.value }))} />
           </div>
           <div>
-            <label className="label">Notes</label>
-            <input className="input" placeholder="Voyage, réunion…"
+            <label htmlFor="constraint-notes" className="label">Notes</label>
+            <input id="constraint-notes" className="input" placeholder="Voyage, réunion…"
               value={currentWeekConstraint.notes}
               onChange={e => setCurrentWeekConstraint((p: any) => ({ ...p, notes: e.target.value }))} />
           </div>

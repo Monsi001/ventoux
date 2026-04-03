@@ -45,7 +45,7 @@ export default function NavBar({ user }: { user: { name: string; email: string }
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                     active
                       ? 'bg-ventoux-500/15 text-ventoux-400 font-medium'
-                      : 'text-stone-400 hover:text-summit-light hover:bg-white/[0.05]'
+                      : 'text-stone-300 hover:text-summit-light hover:bg-white/[0.05]'
                   }`}
                 >
                   <Icon size={15} strokeWidth={active ? 2 : 1.5} />
@@ -94,7 +94,7 @@ export default function NavBar({ user }: { user: { name: string; email: string }
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                     active
                       ? 'bg-ventoux-500/15 text-ventoux-400'
-                      : 'text-stone-400 hover:text-summit-light hover:bg-white/[0.05]'
+                      : 'text-stone-300 hover:text-summit-light hover:bg-white/[0.05]'
                   }`}
                 >
                   <Icon size={18} strokeWidth={active ? 2 : 1.5} />
