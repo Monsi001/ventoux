@@ -4,7 +4,8 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import {
   TrendingUp, Zap, Calendar, Mountain, Clock,
-  Activity, ChevronRight, RefreshCw, AlertTriangle
+  Activity, ChevronRight, RefreshCw, AlertTriangle,
+  CheckCircle2, Moon
 } from 'lucide-react'
 import { calculatePMC, estimateVentouxTime, formatMinutes } from '@/lib/training'
 import { format, differenceInDays, startOfWeek, addDays } from 'date-fns'
@@ -127,6 +128,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Today Hero */}
+      <TodayHero activePlan={activePlan} />
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -253,6 +257,114 @@ export default function DashboardPage() {
 }
 
 // ─── Sous-composants ─────────────────────────────────────────────────────────
+
+const DAY_KEYS_FROM_JS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+
+const TYPE_ICONS_EMOJI: Record<string, string> = {
+  ENDURANCE: '🚴', TEMPO: '⚡', THRESHOLD: '🔥', VO2MAX: '💥',
+  SWEET_SPOT: '🎯', RECOVERY: '🌿', LONG_RIDE: '🏔️', RACE_SIM: '🏁',
+  STRENGTH: '💪', REST: '😴', VIRTUAL_RIDE: '🖥️',
+}
+
+function TodayHero({ activePlan }: { activePlan: TrainingPlan | null }) {
+  if (!activePlan) return null
+
+  const today = new Date()
+  const todayDayKey = DAY_KEYS_FROM_JS[today.getDay()]
+
+  // Find current week
+  const currentWeek = activePlan.weeks?.find((w: any) => {
+    const weekStart = new Date(w.weekStart)
+    const weekEnd = addDays(weekStart, 7)
+    return today >= weekStart && today < weekEnd
+  })
+
+  if (!currentWeek) return null
+
+  const todaySession = currentWeek.sessions?.find((s: any) => s.day === todayDayKey)
+
+  // Rest day
+  if (!todaySession) {
+    return (
+      <div className="card p-5 relative overflow-hidden border-l-4 border-stone-600">
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0 p-3 rounded-xl bg-stone-800/50">
+            <Moon size={24} className="text-stone-400" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-widest text-stone-500 mb-1">Aujourd&apos;hui</p>
+            <p className="font-display text-xl font-bold text-summit-light">Repos</p>
+            <p className="text-stone-500 text-sm mt-0.5">La récupération fait partie de l&apos;entraînement</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Session completed
+  if (todaySession.completed) {
+    const color = ZONE_COLORS[todaySession.intensityZone] || '#6E6C69'
+    return (
+      <div className="card p-5 relative overflow-hidden border-l-4" style={{ borderLeftColor: color }}>
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0 p-3 rounded-xl bg-emerald-500/10">
+            <CheckCircle2 size={24} className="text-emerald-400" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-widest text-stone-500 mb-1">Aujourd&apos;hui</p>
+            <p className="font-display text-xl font-bold text-summit-light">Séance terminée</p>
+            <p className="text-stone-500 text-sm mt-0.5">{todaySession.name} — Bien joué, continue comme ça !</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Session pending
+  const color = ZONE_COLORS[todaySession.intensityZone] || '#6E6C69'
+  const icon = TYPE_ICONS_EMOJI[todaySession.type] || '🚴'
+  const zoneLabel = TYPE_LABELS[todaySession.type] || todaySession.type
+
+  return (
+    <div className="card p-5 relative overflow-hidden border-l-4" style={{ borderLeftColor: color }}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs uppercase tracking-widest text-stone-500 mb-1">Aujourd&apos;hui</p>
+          <p className="font-display text-xl font-bold text-summit-light">
+            <span className="mr-2">{icon}</span>{todaySession.name}
+          </p>
+
+          {/* Metrics row */}
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.05] text-sm text-stone-300">
+              <Clock size={13} /> {todaySession.duration} min
+            </span>
+            {todaySession.tssTarget && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.05] text-sm text-stone-300">
+                <Zap size={13} /> TSS {todaySession.tssTarget}
+              </span>
+            )}
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium"
+              style={{ background: color + '20', color }}
+            >
+              Z{todaySession.intensityZone} · {zoneLabel}
+            </span>
+          </div>
+
+          {/* Description */}
+          {todaySession.description && (
+            <p className="text-stone-500 text-sm mt-2 line-clamp-2">{todaySession.description}</p>
+          )}
+        </div>
+
+        <Link href="/plan" className="btn-primary text-sm px-4 py-2 flex-shrink-0 mt-1">
+          Voir la séance
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 const StatCard = React.memo(function StatCard({ label, value, sub, icon, color, tooltip }: {
   label: string; value: string; sub: string; icon: React.ReactNode; color: string; tooltip?: string
