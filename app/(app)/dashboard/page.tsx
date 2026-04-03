@@ -227,7 +227,7 @@ export default function DashboardPage() {
               <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-ventoux-500 inline-block rounded" />TSB</span>
             </div>
           </div>
-          <PMCChart data={pmc.slice(-42)} />
+          <PMCChart data={pmc} raceDate={race?.date} />
         </div>
 
         {/* Prochaines séances */}
