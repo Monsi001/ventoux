@@ -51,12 +51,12 @@ const TYPE_ICONS: Record<string, string> = {
 
 // Phase color matching — handles exact keys and fuzzy names like "Base Aerobic", "Build Intensity", "Peak Ventoux"
 function getPhaseKey(type: string): string {
-  const upper = type.toUpperCase()
-  if (upper.includes('TAPER')) return 'TAPER'
+  const upper = type.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
+  if (upper.includes('TAPER') || upper.includes('AFFUT')) return 'TAPER'
   if (upper.includes('RECOVERY') || upper.includes('RECUP')) return 'RECOVERY'
-  if (upper.includes('PEAK') || upper.includes('VENTOUX')) return 'PEAK'
-  if (upper.includes('INTENSITY') || upper.includes('SPECIALTY')) return 'BUILD_INTENSITY'
-  if (upper.includes('BUILD')) return 'BUILD'
+  if (upper.includes('PEAK') || upper.includes('VENTOUX') || upper.includes('SPECIFIQUE')) return 'PEAK'
+  if (upper.includes('INTENSIT') || upper.includes('SPECIALTY')) return 'BUILD_INTENSITY'
+  if (upper.includes('BUILD') || upper.includes('AEROBI')) return 'BUILD'
   if (upper.includes('BASE')) return 'BASE'
   return type.toUpperCase()
 }
