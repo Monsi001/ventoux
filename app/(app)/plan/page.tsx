@@ -588,7 +588,7 @@ export default function PlanPage() {
             </button>
           </>
         ) : (
-          <p className="text-stone-600 text-sm text-center">
+          <p className="text-stone-400 text-sm text-center">
             Commencez par <a href="/races" className="text-ventoux-400 hover:underline">ajouter une course</a>.
           </p>
         )}
@@ -666,16 +666,16 @@ export default function PlanPage() {
               <div>
                 <p className="font-display text-lg font-bold text-summit-light">
                   {actualWeekHours > 0 ? `${actualWeekHours}` : '—'}
-                  <span className="text-stone-600 text-xs font-normal"> / {weekTotalHours}h</span>
+                  <span className="text-stone-400 text-xs font-normal"> / {weekTotalHours}h</span>
                 </p>
-                <p className="text-stone-600 text-[10px] uppercase tracking-widest">Volume</p>
+                <p className="text-stone-400 text-[10px] uppercase tracking-widest">Volume</p>
               </div>
               <div>
                 <p className="font-display text-lg font-bold text-summit-light">
                   {actualWeekTss > 0 ? actualWeekTss : '—'}
-                  <span className="text-stone-600 text-xs font-normal"> / {weekTotalTss}</span>
+                  <span className="text-stone-400 text-xs font-normal"> / {weekTotalTss}</span>
                 </p>
-                <p className="text-stone-600 text-[10px] uppercase tracking-widest"><Term term="TSS">TSS</Term></p>
+                <p className="text-stone-400 text-[10px] uppercase tracking-widest"><Term term="TSS">TSS</Term></p>
               </div>
             </div>
             <GlossaryButton />
@@ -691,7 +691,7 @@ export default function PlanPage() {
               </select>
             )}
             <div className="flex items-center gap-1">
-              <Calendar size={14} className="text-stone-600 flex-shrink-0" />
+              <Calendar size={14} className="text-stone-400 flex-shrink-0" />
               <input
                 type="date"
                 value={planStartDate}
@@ -704,7 +704,7 @@ export default function PlanPage() {
               className={`p-2 rounded-lg transition-all ${
                 includeStrength
                   ? 'text-purple-400 bg-purple-500/10'
-                  : 'text-stone-600 hover:text-stone-400'
+                  : 'text-stone-400 hover:text-stone-400'
               }`}
               title={includeStrength ? 'Renfo inclus (cliquer pour exclure)' : 'Sans renfo (cliquer pour inclure)'}
             >
@@ -730,7 +730,7 @@ export default function PlanPage() {
 
         {/* Mobile stats row */}
         <div className="flex sm:hidden items-center gap-3 mt-2 text-xs text-stone-500">
-          <span className="font-display font-bold text-summit-light">{actualWeekHours > 0 ? actualWeekHours : '—'}<span className="text-stone-600 font-normal">/{weekTotalHours}h</span></span>
+          <span className="font-display font-bold text-summit-light">{actualWeekHours > 0 ? actualWeekHours : '—'}<span className="text-stone-400 font-normal">/{weekTotalHours}h</span></span>
           <span>·</span>
           <span><Term term="TSS">TSS {actualWeekTss > 0 ? actualWeekTss : '—'}/{weekTotalTss}</Term></span>
           <span>·</span>
@@ -803,7 +803,7 @@ export default function PlanPage() {
                 const isActive = currentPhase?.type === phase.type && currentPhase?.startWeek === phase.startWeek
                 return (
                   <div key={`label-${phase.type}-${phase.startWeek}`} style={{ width: `${widthPct}%` }} className="text-center">
-                    <span className={`text-[10px] ${isActive ? 'text-stone-300 font-medium' : 'text-stone-600'}`}>
+                    <span className={`text-[10px] ${isActive ? 'text-stone-300 font-medium' : 'text-stone-400'}`}>
                       {phase.name}
                     </span>
                   </div>
@@ -825,7 +825,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.ctl > 60 ? 'text-green-400' : latestPmc.ctl > 30 ? 'text-amber-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.ctl)}
             </p>
-            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-400 text-[10px] uppercase tracking-widest mt-0.5">
               <Term term="CTL">CTL</Term> · Fitness
             </p>
           </div>
@@ -833,7 +833,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.atl > latestPmc.ctl * 1.3 ? 'text-red-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.atl)}
             </p>
-            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-400 text-[10px] uppercase tracking-widest mt-0.5">
               <Term term="ATL">ATL</Term> · Fatigue
             </p>
           </div>
@@ -841,7 +841,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.tsb > 5 ? 'text-green-400' : latestPmc.tsb < -20 ? 'text-red-400' : 'text-amber-400'}`}>
               {latestPmc.tsb > 0 ? '+' : ''}{Math.round(latestPmc.tsb)}
             </p>
-            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-400 text-[10px] uppercase tracking-widest mt-0.5">
               <Term term="TSB">TSB</Term> · {latestPmc.tsb > 5 ? 'Reposé' : latestPmc.tsb < -20 ? 'Fatigué' : 'Forme'}
             </p>
           </div>
@@ -923,7 +923,7 @@ export default function PlanPage() {
                   }`}
                 >
                   {/* Day header */}
-                  <div className={`px-2.5 py-2 text-center border-b border-white/[0.04] ${isToday ? 'text-ventoux-400' : 'text-stone-600'}`}>
+                  <div className={`px-2.5 py-2 text-center border-b border-white/[0.04] ${isToday ? 'text-ventoux-400' : 'text-stone-400'}`}>
                     <p className="text-xs font-medium">{DAYS_FR[i]}</p>
                     <p className={`text-lg font-display font-bold ${isToday ? 'text-ventoux-400' : 'text-stone-500'}`}>{format(weekDate, 'd')}</p>
                   </div>
@@ -1075,17 +1075,17 @@ export default function PlanPage() {
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold text-summit-light">{selectedSession.duration}<span className="text-xs text-stone-500">min</span></p>
-                  <p className="text-[10px] text-stone-600 uppercase">Durée</p>
+                  <p className="text-[10px] text-stone-400 uppercase">Durée</p>
                 </div>
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold text-summit-light">{selectedSession.tssTarget || '—'}</p>
-                  <p className="text-[10px] text-stone-600 uppercase"><Term term="TSS">TSS</Term></p>
+                  <p className="text-[10px] text-stone-400 uppercase"><Term term="TSS">TSS</Term></p>
                 </div>
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold" style={{ color: ZONE_COLORS[selectedSession.intensityZone] || '#888' }}>
                     Z{selectedSession.intensityZone}
                   </p>
-                  <p className="text-[10px] text-stone-600 uppercase">Zone</p>
+                  <p className="text-[10px] text-stone-400 uppercase">Zone</p>
                 </div>
               </div>
 
@@ -1171,7 +1171,7 @@ export default function PlanPage() {
 
                         {mywhooshWorkout.steps?.length > 0 && (
                           <div>
-                            <p className="text-[10px] uppercase text-stone-600 mb-1.5">Structure</p>
+                            <p className="text-[10px] uppercase text-stone-400 mb-1.5">Structure</p>
                             <div className="flex gap-[1px] h-8 rounded-lg overflow-hidden">
                               {mywhooshWorkout.steps.slice(0, 30).map((step: any, i: number) => {
                                 const power = step.Power || 0
@@ -1213,7 +1213,7 @@ export default function PlanPage() {
                     {!loadingRide && (
                       <button
                         onClick={() => loadRideSuggestions(selectedSession)}
-                        className="text-stone-600 hover:text-stone-400 transition-colors"
+                        className="text-stone-400 hover:text-stone-400 transition-colors"
                       >
                         <RefreshCw size={12} />
                       </button>
@@ -1285,7 +1285,7 @@ export default function PlanPage() {
                           )}
 
                           {/* Train info */}
-                          <div className="flex items-center gap-1.5 text-[10px] text-stone-600 mb-2.5">
+                          <div className="flex items-center gap-1.5 text-[10px] text-stone-400 mb-2.5">
                             <Train size={10} />
                             <span>{suggestion.sector.nearestStation}</span>
                             {suggestion.sector.trainFromParis && <span className="text-stone-700">· {suggestion.sector.trainFromParis}</span>}
@@ -1312,7 +1312,7 @@ export default function PlanPage() {
 
               {/* Move to another day */}
               <div>
-                <p className="text-[10px] uppercase text-stone-600 mb-2 tracking-wider">Déplacer</p>
+                <p className="text-[10px] uppercase text-stone-400 mb-2 tracking-wider">Déplacer</p>
                 <div className="grid grid-cols-7 gap-1">
                   {DAY_KEYS.map((dayKey, i) => {
                     const isCurrent = selectedSession.day === dayKey
@@ -1330,7 +1330,7 @@ export default function PlanPage() {
                             ? 'bg-ventoux-500/20 text-ventoux-400 ring-1 ring-ventoux-500/30'
                             : hasConflict
                               ? 'bg-white/[0.02] text-stone-800 cursor-not-allowed'
-                              : 'bg-white/[0.03] text-stone-600 hover:bg-white/[0.06] hover:text-stone-300'
+                              : 'bg-white/[0.03] text-stone-400 hover:bg-white/[0.06] hover:text-stone-300'
                         }`}
                         title={hasConflict ? 'Séance vélo déjà présente' : ''}
                       >

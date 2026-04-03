@@ -59,7 +59,7 @@ export function ProgressionCard({ pmc, activePlan, ventouxEstimate }: Progressio
 
   return (
     <div className="card p-5">
-      <h2 className="font-display text-xs uppercase tracking-[0.2em] text-stone-600 mb-4">Ta progression</h2>
+      <h2 className="font-display text-xs uppercase tracking-[0.2em] text-stone-400 mb-4">Ta progression</h2>
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Colonne gauche : texte */}
@@ -75,7 +75,7 @@ export function ProgressionCard({ pmc, activePlan, ventouxEstimate }: Progressio
                   {ctlDelta > 2 ? '📈 ' : ctlDelta < -2 ? '📉 ' : '→ '}
                   {fitnessText}
                 </p>
-                <p className="text-stone-600 text-xs mt-0.5">
+                <p className="text-stone-400 text-xs mt-0.5">
                   CTL {Math.round(pastCTL)} → {Math.round(currentCTL)}
                 </p>
               </div>
@@ -92,7 +92,7 @@ export function ProgressionCard({ pmc, activePlan, ventouxEstimate }: Progressio
                 <p className="text-sm font-medium text-summit-light">
                   {completionRate}% des séances complétées
                 </p>
-                <p className="text-stone-600 text-xs mt-0.5">
+                <p className="text-stone-400 text-xs mt-0.5">
                   {completedSessions}/{totalSessions} séances
                 </p>
                 {/* Barre de progression */}
@@ -124,7 +124,7 @@ export function ProgressionCard({ pmc, activePlan, ventouxEstimate }: Progressio
         {/* Colonne droite : sparkline */}
         {sparkData.length > 1 && (
           <div className="flex flex-col justify-center">
-            <p className="text-stone-600 text-xs mb-2">CTL — 8 dernières semaines</p>
+            <p className="text-stone-400 text-xs mb-2">CTL — 8 dernières semaines</p>
             <svg viewBox="0 0 100 100" className="w-full h-16" preserveAspectRatio="none">
               <polyline
                 points={points}
@@ -135,7 +135,7 @@ export function ProgressionCard({ pmc, activePlan, ventouxEstimate }: Progressio
                 strokeLinejoin="round"
               />
             </svg>
-            <div className="flex justify-between text-stone-600 text-xs mt-1">
+            <div className="flex justify-between text-stone-400 text-xs mt-1">
               <span>{Math.round(sparkData[0])}</span>
               <span>{Math.round(sparkData[sparkData.length - 1])}</span>
             </div>

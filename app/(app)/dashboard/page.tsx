@@ -275,7 +275,7 @@ export default function DashboardPage() {
               </div>
               <div className="text-center">
                 <p className="text-summit-light font-medium text-sm">Ajouter une course</p>
-                <p className="text-stone-600 text-xs">Ton objectif de saison</p>
+                <p className="text-stone-400 text-xs">Ton objectif de saison</p>
               </div>
               {races.length === 0 && <Link href="/races" className="btn-primary text-xs px-4 py-1.5">Ajouter</Link>}
             </div>
@@ -293,7 +293,7 @@ export default function DashboardPage() {
               </div>
               <div className="text-center">
                 <p className="text-summit-light font-medium text-sm">Configurer ton profil</p>
-                <p className="text-stone-600 text-xs">{"FTP, poids, disponibilités"}</p>
+                <p className="text-stone-400 text-xs">{"FTP, poids, disponibilités"}</p>
               </div>
               {!user?.ftp && <Link href="/profile" className="btn-secondary text-xs px-4 py-1.5">Profil</Link>}
             </div>
@@ -308,7 +308,7 @@ export default function DashboardPage() {
               </div>
               <div className="text-center">
                 <p className="text-summit-light font-medium text-sm">Générer ton plan</p>
-                <p className="text-stone-600 text-xs">{"L'IA crée ton programme"}</p>
+                <p className="text-stone-400 text-xs">{"L'IA crée ton programme"}</p>
               </div>
               <Link href="/plan" className="btn-secondary text-xs px-4 py-1.5">Générer</Link>
             </div>
@@ -335,7 +335,7 @@ export default function DashboardPage() {
             <div className="text-center py-8">
               <Activity size={32} className="mx-auto text-stone-700 mb-3" />
               <p className="text-stone-500 text-sm">Aucune activité enregistrée</p>
-              <p className="text-stone-600 text-xs mt-1">Connectez votre compte Strava ou importez un fichier GPX/FIT</p>
+              <p className="text-stone-400 text-xs mt-1">Connectez votre compte Strava ou importez un fichier GPX/FIT</p>
               <div className="flex items-center justify-center gap-3 mt-3">
                 <Link href="/profile" className="btn-primary text-sm inline-block px-4 py-2">
                   Connecter Strava
@@ -489,7 +489,7 @@ const StatCard = React.memo(function StatCard({ label, value, sub, icon, color, 
         })()}
       </div>
       <div className="stat-label">{label}</div>
-      {sub && <div className="text-stone-600 text-xs mt-0.5">{sub}</div>}
+      {sub && <div className="text-stone-400 text-xs mt-0.5">{sub}</div>}
     </div>
   )
 })
@@ -531,7 +531,7 @@ const ActivityRow = React.memo(function ActivityRow({ activity, userFtp }: { act
       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: sourceColors[activity.source] }} />
       <div className="flex-1 min-w-0">
         <p className="text-summit-light text-sm truncate">{activity.name}</p>
-        <p className="text-stone-600 text-xs">
+        <p className="text-stone-400 text-xs">
           {format(new Date(activity.date), 'dd MMM', { locale: fr })}
           {activity.distance ? ` · ${activity.distance.toFixed(1)} km` : ''}
           {activity.elevation ? ` · ${activity.elevation} m D+` : ''}
