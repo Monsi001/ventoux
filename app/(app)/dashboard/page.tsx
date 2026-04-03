@@ -12,6 +12,7 @@ import { format, differenceInDays, startOfWeek, addDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import type { Activity as ActivityType, TrainingPlan, Race, UserProfile } from '@/types'
 import { cachedFetch } from '@/lib/fetch-cache'
+import { ProgressionCard } from './components/ProgressionCard'
 
 const PMCChart = dynamic(() => import('./PMCChart'), {
   ssr: false,
@@ -190,6 +191,11 @@ export default function DashboardPage() {
         />
         </div>
       </div>
+
+      {/* Progression */}
+      {pmc.length > 0 && (
+        <ProgressionCard pmc={pmc} activePlan={activePlan} ventouxEstimate={ventouxEstimate} />
+      )}
 
       {/* PMC Chart + prochaines séances */}
       <div>
