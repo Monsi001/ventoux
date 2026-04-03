@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const include = searchParams.get('include')?.split(',') || ['profile', 'races', 'activities', 'plans']
   const activityLimit = parseInt(searchParams.get('activityLimit') || '60')
+  const activityOffset = parseInt(searchParams.get('activityOffset') || '0')
 
   const queries: Record<string, Promise<any>> = {}
 
@@ -33,6 +34,7 @@ export async function GET(req: Request) {
     queries.activities = prisma.activity.findMany({
       where: { userId: session.user.id },
       orderBy: { date: 'desc' },
+      skip: activityOffset,
       take: activityLimit,
       select: {
         id: true, userId: true, source: true, stravaId: true, type: true,
@@ -42,6 +44,9 @@ export async function GET(req: Request) {
         notes: true, createdAt: true,
         // Exclut gpxData, fitData, rawData (trop lourds)
       },
+    })
+    queries.activityCount = prisma.activity.count({
+      where: { userId: session.user.id },
     })
   }
 

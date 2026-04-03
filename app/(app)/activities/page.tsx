@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle, Pencil, Trash2 } from 'lucide-react'
+import { Upload, RefreshCw, Activity, Bike, Dumbbell, Loader2, CheckCircle2, X, AlertCircle, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Activity as ActivityType } from '@/types'
 import { formatDuration } from '@/lib/training'
 import { cachedFetch } from '@/lib/fetch-cache'
@@ -25,6 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 export default function ActivitiesPage() {
+  const PAGE_SIZE = 20
   const [activities, setActivities] = useState<ActivityType[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
@@ -32,24 +33,32 @@ export default function ActivitiesPage() {
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [stravaConnected, setStravaConnected] = useState(false)
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadAll()
   }, [])
 
+  useEffect(() => {
+    loadActivities()
+  }, [page])
+
   async function loadAll() {
     setLoading(true)
-    const data = await cachedFetch('/api/init?include=profile,activities&activityLimit=100')
+    const data = await cachedFetch(`/api/init?include=profile,activities&activityLimit=${PAGE_SIZE}&activityOffset=${(page - 1) * PAGE_SIZE}`)
     setActivities(Array.isArray(data.activities) ? data.activities : [])
+    setTotalCount(data.activityCount ?? data.activities?.length ?? 0)
     setStravaConnected(!!data.profile?.stravaId)
     setLoading(false)
   }
 
   async function loadActivities() {
     setLoading(true)
-    const data = await cachedFetch('/api/init?include=activities&activityLimit=100')
+    const data = await cachedFetch(`/api/init?include=activities&activityLimit=${PAGE_SIZE}&activityOffset=${(page - 1) * PAGE_SIZE}`)
     setActivities(Array.isArray(data.activities) ? data.activities : [])
+    if (data.activityCount !== undefined) setTotalCount(data.activityCount)
     setLoading(false)
   }
 
@@ -112,7 +121,7 @@ export default function ActivitiesPage() {
           <h1 className="font-display text-2xl md:text-3xl font-bold text-summit-light uppercase tracking-wide">
             Activités
           </h1>
-          <p className="text-stone-500 mt-0.5 text-sm">{activities.length} activités importées</p>
+          <p className="text-stone-500 mt-0.5 text-sm">{totalCount || activities.length} activités importées</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -198,6 +207,29 @@ export default function ActivitiesPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalCount > PAGE_SIZE && (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="btn-secondary flex items-center gap-1.5 disabled:opacity-40"
+          >
+            <ChevronLeft size={15} /> Précédent
+          </button>
+          <span className="text-sm text-stone-400">
+            Page {page} / {Math.ceil(totalCount / PAGE_SIZE)}
+          </span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={page >= Math.ceil(totalCount / PAGE_SIZE)}
+            className="btn-secondary flex items-center gap-1.5 disabled:opacity-40"
+          >
+            Suivant <ChevronRight size={15} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -125,6 +125,7 @@ export default function RacesPage() {
             <div>
               <label className="label">Date *</label>
               <input type="date" className="input" value={form.date}
+                min={new Date().toISOString().split('T')[0]}
                 onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
             </div>
             <div>
@@ -222,7 +223,7 @@ export default function RacesPage() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="text-right mr-2">
                       <p className="font-display text-2xl md:text-3xl font-bold text-summit-light">
-                        {daysUntil > 0 ? `J-${daysUntil}` : daysUntil === 0 ? "Aujourd'hui !" : `J+${Math.abs(daysUntil)}`}
+                        {daysUntil > 0 ? `J-${daysUntil}` : daysUntil === 0 ? "Aujourd'hui !" : 'Terminée'}
                       </p>
                       <p className="text-stone-600 text-xs uppercase tracking-widest">
                         {daysUntil > 0 ? `${Math.floor(daysUntil / 7)} semaines` : 'Passée'}
