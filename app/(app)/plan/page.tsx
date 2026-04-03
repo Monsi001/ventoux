@@ -911,8 +911,12 @@ export default function PlanPage() {
             </div>
             <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
           </div>
-          <div className="text-sm text-stone-300 leading-relaxed">
-            <p className="whitespace-pre-line">{plan!.aiNotes}</p>
+          <div className="text-sm text-stone-300 leading-relaxed space-y-2">
+            {plan!.aiNotes.split(/\.\s+/).filter(Boolean).map((sentence: string, i: number) => {
+              const s = sentence.trim().replace(/\.$/, '')
+              if (!s) return null
+              return <p key={i}>• {s}.</p>
+            })}
           </div>
         </div>
       )}
