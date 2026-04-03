@@ -22,6 +22,7 @@ const PMCChart = dynamic(() => import('./PMCChart'), {
 
 interface DashboardData {
   user: UserProfile
+  races: Race[]
   race: Race | null
   activePlan: TrainingPlan | null
   recentActivities: ActivityType[]
@@ -59,7 +60,7 @@ export default function DashboardPage() {
         new Date(a.date) >= weekStart
       )
 
-      setData({ user, race: activeRace, activePlan, recentActivities: activities, weekActivities })
+      setData({ user, races, race: activeRace, activePlan, recentActivities: activities, weekActivities })
     } catch (e) {
       console.error('Dashboard error:', e)
     } finally {
@@ -70,7 +71,7 @@ export default function DashboardPage() {
   if (loading) return <DashboardSkeleton />
   if (!data) return null
 
-  const { user, race, activePlan, recentActivities, weekActivities } = data
+  const { user, races, race, activePlan, recentActivities, weekActivities } = data
 
   // Stats semaine
   const weekTss = weekActivities.reduce((s, a) => s + (a.tss || 0), 0)
@@ -233,6 +234,63 @@ export default function DashboardPage() {
         </div>
         </div>
       </div>
+
+      {/* Stepper onboarding — affiché quand pas de plan */}
+      {!activePlan && (
+        <div className="card p-8 text-center">
+          <h2 className="font-display text-2xl font-bold text-summit-light mb-2">{"Prêt à grimper le Ventoux ?"}</h2>
+          <p className="text-stone-500 mb-8">{"3 étapes pour démarrer ton entraînement"}</p>
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10">
+            {/* Étape 1 */}
+            <div className="flex flex-col items-center gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
+                races.length > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-ventoux-gradient text-white'
+              }`}>
+                {races.length > 0 ? '\u2713' : '1'}
+              </div>
+              <div className="text-center">
+                <p className="text-summit-light font-medium text-sm">Ajouter une course</p>
+                <p className="text-stone-600 text-xs">Ton objectif de saison</p>
+              </div>
+              {races.length === 0 && <Link href="/races" className="btn-primary text-xs px-4 py-1.5">Ajouter</Link>}
+            </div>
+
+            {/* Ligne pointillée */}
+            <div className="hidden md:block w-12 border-t border-dashed border-stone-700" />
+            <div className="md:hidden h-6 border-l border-dashed border-stone-700" />
+
+            {/* Étape 2 — FTP configuré */}
+            <div className="flex flex-col items-center gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
+                user?.ftp ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/[0.06] text-stone-500'
+              }`}>
+                {user?.ftp ? '\u2713' : '2'}
+              </div>
+              <div className="text-center">
+                <p className="text-summit-light font-medium text-sm">Configurer ton profil</p>
+                <p className="text-stone-600 text-xs">{"FTP, poids, disponibilités"}</p>
+              </div>
+              {!user?.ftp && <Link href="/profile" className="btn-secondary text-xs px-4 py-1.5">Profil</Link>}
+            </div>
+
+            <div className="hidden md:block w-12 border-t border-dashed border-stone-700" />
+            <div className="md:hidden h-6 border-l border-dashed border-stone-700" />
+
+            {/* Étape 3 — Générer le plan */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white/[0.06] flex items-center justify-center text-lg font-bold text-stone-500">
+                3
+              </div>
+              <div className="text-center">
+                <p className="text-summit-light font-medium text-sm">Générer ton plan</p>
+                <p className="text-stone-600 text-xs">{"L'IA crée ton programme"}</p>
+              </div>
+              <Link href="/plan" className="btn-secondary text-xs px-4 py-1.5">Générer</Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Activités récentes */}
       <div>

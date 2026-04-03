@@ -2,9 +2,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Sparkles, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info, Mountain, X, Dumbbell, Bike, Check, Calendar, Trash2, Sun, MapPin, Download, Train, Wind, Thermometer } from 'lucide-react'
+import { Sparkles, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info, Mountain, X, Dumbbell, Bike, Check, Calendar, Trash2, Sun, MapPin, Download, Train, Wind, Thermometer, CheckCircle2, AlertCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
-import type { TrainingPlan, TrainingWeek, TrainingSession, Race, Activity } from '@/types'
+import type { TrainingPlan, TrainingWeek, TrainingSession, Race, Activity, UserProfile } from '@/types'
 import { calculatePMC } from '@/lib/training'
 import { GlossaryButton, Term } from '@/components/ui/Tooltip'
 import { cachedFetch, invalidateCache } from '@/lib/fetch-cache'
@@ -72,6 +72,7 @@ const DAYS_FR_LONG = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi
 export default function PlanPage() {
   const [plan, setPlan] = useState<TrainingPlan | null>(null)
   const [races, setRaces] = useState<Race[]>([])
+  const [user, setUser] = useState<UserProfile | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])
   const [selectedRaceId, setSelectedRaceId] = useState<string>('')
   const [currentWeekIdx, setCurrentWeekIdx] = useState(0)
@@ -134,13 +135,14 @@ export default function PlanPage() {
 
   async function loadData() {
     setLoading(true)
-    const data = await cachedFetch('/api/init?include=plans,races,activities&activityLimit=60')
+    const data = await cachedFetch('/api/init?include=profile,plans,races,activities&activityLimit=60')
     const plans = Array.isArray(data.plans) ? data.plans : []
     const racesData = Array.isArray(data.races) ? data.races : []
     const activitiesData = Array.isArray(data.activities) ? data.activities : []
 
     setRaces(racesData)
     setActivities(activitiesData)
+    if (data.profile) setUser(data.profile)
 
     if (Array.isArray(plans) && plans.length > 0) {
       const activePlan = plans[0] as TrainingPlan
@@ -518,6 +520,17 @@ export default function PlanPage() {
       <p className="text-stone-500 text-center max-w-md mb-8">
         Claude analysera vos activités, votre FTP et vos disponibilités pour créer un plan personnalisé.
       </p>
+
+      <div className="flex items-center gap-4 mb-6 text-sm">
+        <div className={`flex items-center gap-2 ${races.length > 0 ? 'text-emerald-400' : 'text-stone-500'}`}>
+          {races.length > 0 ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          Course objectif
+        </div>
+        <div className={`flex items-center gap-2 ${user?.ftp ? 'text-emerald-400' : 'text-stone-500'}`}>
+          {user?.ftp ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          FTP renseigné
+        </div>
+      </div>
 
       <div className="w-full max-w-sm space-y-4">
         {races.length > 0 ? (
