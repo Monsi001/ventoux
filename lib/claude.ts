@@ -101,17 +101,12 @@ JSON compact, format EXACT:
       .replace(/```\n?/g, '')
       .trim()
 
-    console.log('Claude stop_reason:', response.stop_reason)
-    console.log('Claude response length:', cleaned.length)
-
     const parsed = JSON.parse(cleaned)
 
     // Valider la structure minimale
     if (!parsed.weeks || !parsed.phases) {
       throw new Error('Structure du plan invalide')
     }
-
-    console.log('Plan parsed OK:', parsed.weeks.length, 'weeks,', parsed.phases.length, 'phases')
 
     // Associer les workouts MyWhoosh aux séances vélo indoor
     let enrichedWeeks
@@ -122,7 +117,6 @@ JSON compact, format EXACT:
           sessions: await matchWorkoutsToSessions(week.sessions),
         }))
       )
-      console.log('MyWhoosh matching OK')
     } catch (matchError) {
       console.error('MyWhoosh matching failed, using raw sessions:', matchError)
       enrichedWeeks = parsed.weeks

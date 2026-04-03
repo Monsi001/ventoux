@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
   const challenge = req.nextUrl.searchParams.get('hub.challenge')
 
   if (mode === 'subscribe' && token === process.env.STRAVA_WEBHOOK_VERIFY_TOKEN) {
-    console.log('[Strava Webhook] Validation OK')
     return NextResponse.json({ 'hub.challenge': challenge })
   }
 
@@ -30,8 +29,6 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   const event = await req.json()
-
-  console.log('[Strava Webhook] Event:', event.object_type, event.aspect_type, event.object_id)
 
   // Répondre 200 immédiatement (Strava exige une réponse rapide)
   // Le traitement se fait en arrière-plan via waitUntil-like pattern
@@ -79,7 +76,7 @@ async function handleActivityCreateOrUpdate(stravaAthleteId: string, stravaActiv
   })
 
   if (!user?.stravaToken) {
-    console.log('[Strava Webhook] User not found for athlete:', stravaAthleteId)
+    console.error('[Strava Webhook] User not found for athlete:', stravaAthleteId)
     return
   }
 
@@ -135,7 +132,7 @@ async function handleActivityCreateOrUpdate(stravaAthleteId: string, stravaActiv
       create: { ...mapped, tss },
     })
 
-    console.log('[Strava Webhook] Activity synced:', stravaActivityId)
+    // Activity synced OK
   } catch (e) {
     console.error('[Strava Webhook] Activity sync failed:', stravaActivityId, e)
   }
@@ -146,7 +143,7 @@ async function handleActivityDelete(stravaActivityId: string) {
     await prisma.activity.deleteMany({
       where: { stravaId: stravaActivityId },
     })
-    console.log('[Strava Webhook] Activity deleted:', stravaActivityId)
+    // Activity deleted OK
   } catch (e) {
     console.error('[Strava Webhook] Activity delete failed:', stravaActivityId, e)
   }
@@ -162,7 +159,7 @@ async function handleDeauthorize(stravaAthleteId: string) {
         stravaExpiry: null,
       },
     })
-    console.log('[Strava Webhook] Deauthorized athlete:', stravaAthleteId)
+    // Deauthorized OK
   } catch (e) {
     console.error('[Strava Webhook] Deauthorize failed:', stravaAthleteId, e)
   }
