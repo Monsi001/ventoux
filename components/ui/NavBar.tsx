@@ -21,11 +21,11 @@ export default function NavBar({ user }: { user: { name: string; email: string }
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/[0.06] backdrop-blur-xl bg-stone-950/80">
+    <nav aria-label="Menu principal" className="sticky top-0 z-50 border-b border-white/[0.06] backdrop-blur-xl bg-stone-950/80">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <Link href="/dashboard" aria-label="Accueil Ventoux" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-lg bg-ventoux-gradient flex items-center justify-center shadow-ventoux-sm group-hover:shadow-ventoux transition-shadow">
               <Mountain size={16} className="text-white" strokeWidth={2} />
             </div>
@@ -42,6 +42,7 @@ export default function NavBar({ user }: { user: { name: string; email: string }
                 <Link
                   key={href}
                   href={href}
+                  aria-current={active ? 'page' : undefined}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                     active
                       ? 'bg-ventoux-500/15 text-ventoux-400 font-medium'
@@ -65,6 +66,7 @@ export default function NavBar({ user }: { user: { name: string; email: string }
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="btn-ghost p-2"
               title="Déconnexion"
+              aria-label="Déconnexion"
             >
               <LogOut size={16} />
             </button>
@@ -74,6 +76,8 @@ export default function NavBar({ user }: { user: { name: string; email: string }
           <button
             className="md:hidden btn-ghost p-2"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-expanded={mobileOpen}
+            aria-label="Ouvrir le menu"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -91,6 +95,7 @@ export default function NavBar({ user }: { user: { name: string; email: string }
                   key={href}
                   href={href}
                   onClick={() => setMobileOpen(false)}
+                  aria-current={active ? 'page' : undefined}
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                     active
                       ? 'bg-ventoux-500/15 text-ventoux-400'

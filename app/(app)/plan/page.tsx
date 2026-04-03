@@ -1107,9 +1107,12 @@ export default function PlanPage() {
 
       {/* ─── Session detail slide-over ─────────────────────────────────────────── */}
       {selectedSession && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedSession(null)}>
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedSession(null)} onKeyDown={e => { if (e.key === 'Escape') setSelectedSession(null) }}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Détail de la séance"
             className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-md bg-stone-950 border-l border-white/[0.06] h-full overflow-y-auto shadow-2xl animate-in"
             style={{ animation: 'slideInRight 0.3s ease-out' }}
             onClick={e => e.stopPropagation()}
@@ -1126,7 +1129,7 @@ export default function PlanPage() {
                     {DAYS_FR_LONG[DAY_KEYS.indexOf(selectedSession.day)]} · {selectedSession.duration}min
                   </p>
                 </div>
-                <button onClick={() => setSelectedSession(null)} className="p-2 rounded-lg text-stone-500 hover:text-summit-light hover:bg-white/[0.05]">
+                <button onClick={() => setSelectedSession(null)} aria-label="Fermer" className="p-2 rounded-lg text-stone-500 hover:text-summit-light hover:bg-white/[0.05]">
                   <X size={18} />
                 </button>
               </div>
@@ -1411,7 +1414,7 @@ export default function PlanPage() {
       {/* ─── Coach chat ──────────────────────────────────────────────────────── */}
       <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
         {chatOpen && (
-          <div className="w-[340px] max-w-[calc(100vw-2rem)] bg-stone-950 border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in">
+          <div role="dialog" aria-modal="true" aria-label="Chat coach" onKeyDown={e => { if (e.key === 'Escape') setChatOpen(false) }} className="w-[340px] max-w-[calc(100vw-2rem)] bg-stone-950 border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-ventoux-gradient flex items-center justify-center">
@@ -1419,7 +1422,7 @@ export default function PlanPage() {
                 </div>
                 <span className="text-sm font-medium text-summit-light">Coach Ventoux</span>
               </div>
-              <button onClick={() => setChatOpen(false)} className="text-stone-500 hover:text-stone-300 transition-colors">
+              <button onClick={() => setChatOpen(false)} aria-label="Fermer" className="text-stone-500 hover:text-stone-300 transition-colors p-2">
                 <X size={16} />
               </button>
             </div>
@@ -1433,6 +1436,7 @@ export default function PlanPage() {
                       <button
                         key={q}
                         onClick={() => setChatMsg(q)}
+                        aria-label={`Réponse rapide : ${q}`}
                         className="text-xs px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-stone-400 hover:text-ventoux-400 hover:border-ventoux-500/30 transition-all"
                       >
                         {q}
@@ -1487,6 +1491,8 @@ export default function PlanPage() {
 
         <button
           onClick={() => setChatOpen((o: boolean) => !o)}
+          aria-label={chatOpen ? 'Fermer le chat coach' : 'Ouvrir le chat coach'}
+          aria-expanded={chatOpen}
           className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all ${
             chatOpen
               ? 'bg-stone-800 text-stone-400'

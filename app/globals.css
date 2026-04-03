@@ -18,6 +18,28 @@
 ::-webkit-scrollbar-thumb { background: rgba(255, 107, 53, 0.3); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 107, 53, 0.5); }
 
+/* ─── Accessibility ─────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #FF6B35;
+  outline-offset: 2px;
+}
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: #FF6B35;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 0.5rem 0;
+}
+.skip-to-content:focus {
+  left: 0;
+}
+
 /* ─── Base styles ────────────────────────────────────────────────────────────── */
 body {
   background: var(--color-bg);

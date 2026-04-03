@@ -293,6 +293,7 @@ export default function ProfilePage() {
                 ...p,
                 availableDays: { ...p.availableDays, [key]: !p.availableDays[key] }
               }))}
+              aria-pressed={!!currentWeekConstraint.availableDays[key]}
               className={`flex-1 py-2.5 rounded-xl text-xs font-medium border transition-all ${
                 currentWeekConstraint.availableDays[key]
                   ? 'bg-ventoux-500/15 border-ventoux-500/30 text-ventoux-300'
