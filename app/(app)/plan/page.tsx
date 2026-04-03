@@ -11,6 +11,7 @@ import { cachedFetch, invalidateCache } from '@/lib/fetch-cache'
 import SessionCard from './components/SessionCard'
 import { Confetti } from '@/components/ui/Confetti'
 import { useToast } from '@/components/ui/ToastProvider'
+import { hapticLight, hapticMedium, hapticSuccess } from '@/lib/haptics'
 
 const CoachChat = dynamic(() => import('./components/CoachChat'), { ssr: false })
 const StrengthPanelDynamic = dynamic(() => import('./components/StrengthPanel'), { ssr: false })
@@ -172,6 +173,7 @@ export default function PlanPage() {
     if (!selectedRaceId) return
     setGenerating(true)
     setError('')
+    hapticMedium()
 
     try {
       const res = await fetch('/api/plan/generate', {
@@ -267,6 +269,7 @@ export default function PlanPage() {
       }
     })
     setPlan({ ...plan, weeks: updatedWeeks })
+    hapticLight()
     if (selectedSession?.id === sessionId) {
       setSelectedSession({ ...selectedSession, day: newDay as any })
     }
@@ -447,6 +450,7 @@ export default function PlanPage() {
       invalidateCache('/api/init')
 
       // Celebration
+      hapticSuccess()
       setShowConfetti(true)
       setTimeout(() => setShowConfetti(false), 3000)
       toast('Bravo ! Séance complétée 🎉', 'celebration')
