@@ -848,11 +848,30 @@ export default function PlanPage() {
         </div>
       )}
 
-      {/* AI Notes */}
+      {/* AI Notes — Diagnostic & Stratégie */}
       {plan!.aiNotes && (
-        <div className="flex items-start gap-2.5 mb-8 text-sm text-stone-400 leading-relaxed">
-          <Sparkles size={14} className="text-ventoux-400 mt-1 flex-shrink-0" />
-          <p>{plan!.aiNotes}</p>
+        <div className="card p-5 mb-8 border-l-4 border-ventoux-500/60">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-ventoux-gradient flex items-center justify-center">
+              <Sparkles size={14} className="text-white" />
+            </div>
+            <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
+          </div>
+          <div className="text-sm text-stone-300 leading-relaxed space-y-2">
+            {plan!.aiNotes.split(/(?=DIAGNOSTIC|RISQUE|PLAN ADAPTÉ|PHASES|OBJECTIF|STRATÉGIE|RECOMMANDATION)/).map((block: string, i: number) => {
+              const colonIdx = block.indexOf(':')
+              const match = colonIdx > 0 && colonIdx < 30 ? [null, block.slice(0, colonIdx), block.slice(colonIdx + 1)] : null
+              if (match) {
+                return (
+                  <div key={i}>
+                    <span className="text-ventoux-400 font-semibold text-xs uppercase tracking-wider">{match[1]!.trim()}</span>
+                    <p className="mt-0.5">{match[2]!.trim()}</p>
+                  </div>
+                )
+              }
+              return <p key={i}>{block.trim()}</p>
+            })}
+          </div>
         </div>
       )}
 
