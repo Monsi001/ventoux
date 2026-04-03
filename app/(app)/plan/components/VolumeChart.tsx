@@ -5,9 +5,21 @@ import { Clock, Zap, CheckCircle2, TrendingUp, Mountain, Heart, Gauge, Flame, Ch
 import { useState } from 'react'
 import type { TrainingPlan, TrainingWeek, Activity } from '@/types'
 
+function getPhaseKey(type: string): string {
+  const upper = type.toUpperCase()
+  if (upper.includes('TAPER')) return 'TAPER'
+  if (upper.includes('RECOVERY') || upper.includes('RECUP')) return 'RECOVERY'
+  if (upper.includes('PEAK') || upper.includes('VENTOUX')) return 'PEAK'
+  if (upper.includes('INTENSITY') || upper.includes('SPECIALTY')) return 'BUILD_INTENSITY'
+  if (upper.includes('BUILD')) return 'BUILD'
+  if (upper.includes('BASE')) return 'BASE'
+  return type.toUpperCase()
+}
+
 const PHASE_COLORS: Record<string, string> = {
   BASE: 'text-blue-400 bg-blue-500/10',
   BUILD: 'text-amber-400 bg-amber-500/10',
+  BUILD_INTENSITY: 'text-orange-400 bg-orange-500/10',
   PEAK: 'text-red-400 bg-red-500/10',
   SPECIALTY: 'text-red-400 bg-red-500/10',
   TAPER: 'text-green-400 bg-green-500/10',
@@ -223,7 +235,7 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
                     </div>
                     <div className="flex items-center gap-2">
                       {w.week.phase && (
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${PHASE_COLORS[w.week.phase] || ''}`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${PHASE_COLORS[getPhaseKey(w.week.phase)] || ''}`}>
                           {w.week.phase}
                         </span>
                       )}

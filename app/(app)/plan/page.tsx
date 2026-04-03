@@ -49,9 +49,22 @@ const TYPE_ICONS: Record<string, string> = {
   STRENGTH: '💪', REST: '😴', VIRTUAL_RIDE: '🖥️',
 }
 
+// Phase color matching — handles exact keys and fuzzy names like "Base Aerobic", "Build Intensity", "Peak Ventoux"
+function getPhaseKey(type: string): string {
+  const upper = type.toUpperCase()
+  if (upper.includes('TAPER')) return 'TAPER'
+  if (upper.includes('RECOVERY') || upper.includes('RECUP')) return 'RECOVERY'
+  if (upper.includes('PEAK') || upper.includes('VENTOUX')) return 'PEAK'
+  if (upper.includes('INTENSITY') || upper.includes('SPECIALTY')) return 'BUILD_INTENSITY'
+  if (upper.includes('BUILD')) return 'BUILD'
+  if (upper.includes('BASE')) return 'BASE'
+  return type.toUpperCase()
+}
+
 const PHASE_COLORS: Record<string, string> = {
   BASE: 'text-blue-400 bg-blue-500/10',
   BUILD: 'text-amber-400 bg-amber-500/10',
+  BUILD_INTENSITY: 'text-orange-400 bg-orange-500/10',
   PEAK: 'text-red-400 bg-red-500/10',
   SPECIALTY: 'text-red-400 bg-red-500/10',
   TAPER: 'text-green-400 bg-green-500/10',
@@ -59,13 +72,13 @@ const PHASE_COLORS: Record<string, string> = {
 }
 
 const PHASE_BAR_COLORS: Record<string, string> = {
-  BASE: 'bg-blue-500', BUILD: 'bg-amber-500', PEAK: 'bg-red-500',
-  SPECIALTY: 'bg-red-500', TAPER: 'bg-green-500', RECOVERY: 'bg-stone-600',
+  BASE: 'bg-blue-500', BUILD: 'bg-amber-500', BUILD_INTENSITY: 'bg-orange-500',
+  PEAK: 'bg-red-500', SPECIALTY: 'bg-red-500', TAPER: 'bg-green-500', RECOVERY: 'bg-stone-600',
 }
 
 const PHASE_DOT_COLORS: Record<string, string> = {
-  BASE: 'bg-blue-400', BUILD: 'bg-amber-400', PEAK: 'bg-red-400',
-  SPECIALTY: 'bg-red-400', TAPER: 'bg-green-400', RECOVERY: 'bg-stone-400',
+  BASE: 'bg-blue-400', BUILD: 'bg-amber-400', BUILD_INTENSITY: 'bg-orange-400',
+  PEAK: 'bg-red-400', SPECIALTY: 'bg-red-400', TAPER: 'bg-green-400', RECOVERY: 'bg-stone-400',
 }
 
 const DAY_KEYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
@@ -662,7 +675,7 @@ export default function PlanPage() {
               <h1 className="font-display text-xl md:text-2xl font-bold text-summit-light uppercase tracking-wide truncate">
                 Semaine {currentWeek?.weekNumber || currentWeekIdx + 1}
                 {currentWeek?.phase && (
-                  <span className={`ml-2 text-sm px-2 py-0.5 rounded-md align-middle ${PHASE_COLORS[currentWeek.phase] || ''}`}>
+                  <span className={`ml-2 text-sm px-2 py-0.5 rounded-md align-middle ${PHASE_COLORS[getPhaseKey(currentWeek.phase)] || ''}`}>
                     {currentWeek.phase}
                   </span>
                 )}
@@ -807,7 +820,7 @@ export default function PlanPage() {
                     <div
                       key={`${phase.type}-${phase.startWeek}`}
                       style={{ width: `${widthPct}%` }}
-                      className={`transition-all ${PHASE_BAR_COLORS[phase.type] || 'bg-stone-600'} ${
+                      className={`transition-all ${PHASE_BAR_COLORS[getPhaseKey(phase.type)] || 'bg-stone-600'} ${
                         isActive ? '/40' : isPast ? '/25' : '/10'
                       }`}
                     />
