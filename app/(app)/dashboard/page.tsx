@@ -12,6 +12,7 @@ import { format, differenceInDays, startOfWeek, addDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import type { Activity as ActivityType, TrainingPlan, Race, UserProfile } from '@/types'
 import { cachedFetch } from '@/lib/fetch-cache'
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
 
 const PMCChart = dynamic(() => import('./PMCChart'), {
   ssr: false,
@@ -34,10 +35,17 @@ interface DashboardData {
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     loadDashboard()
   }, [])
+
+  useEffect(() => {
+    if (data && !data.user.ftp && data.races.length === 0 && data.recentActivities.length === 0) {
+      setShowOnboarding(true)
+    }
+  }, [data])
 
   async function loadDashboard() {
     setLoading(true)
@@ -107,6 +115,13 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-10 animate-in">
+      {showOnboarding && (
+        <OnboardingWizard
+          user={data.user}
+          onComplete={() => { setShowOnboarding(false); loadDashboard() }}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
