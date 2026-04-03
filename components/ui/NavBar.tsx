@@ -72,9 +72,9 @@ export default function NavBar({ user }: { user: { name: string; email: string }
             </button>
           </div>
 
-          {/* Mobile burger */}
+          {/* Mobile burger — masqué, remplacé par BottomNav */}
           <button
-            className="md:hidden btn-ghost p-2"
+            className="hidden btn-ghost p-2"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-expanded={mobileOpen}
             aria-label="Ouvrir le menu"
@@ -84,8 +84,8 @@ export default function NavBar({ user }: { user: { name: string; email: string }
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <div className={`md:hidden border-t border-white/[0.06] bg-stone-950/95 backdrop-blur-xl overflow-hidden transition-all duration-200 ease-in-out ${
+      {/* Mobile menu — masqué, remplacé par BottomNav */}
+      <div className={`hidden border-t border-white/[0.06] bg-stone-950/95 backdrop-blur-xl overflow-hidden transition-all duration-200 ease-in-out ${
         mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
       }`}>
         <div className="container mx-auto px-4 py-3 space-y-1">
