@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import NavBar from '@/components/ui/NavBar'
 import { ToastProvider } from '@/components/ui/Toast'
+import { Breadcrumb } from '@/components/ui/Breadcrumb'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions)
@@ -13,6 +14,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <NavBar user={{ name: session.user?.name || '', email: session.user?.email || '' }} />
       <main id="main-content" className="flex-1 container mx-auto px-4 py-6 max-w-7xl">
         <ToastProvider>
+          <div className="mb-4">
+            <Breadcrumb />
+          </div>
           {children}
         </ToastProvider>
       </main>

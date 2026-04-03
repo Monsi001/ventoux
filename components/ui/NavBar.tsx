@@ -117,7 +117,6 @@ export default function NavBar({ user }: { user: { name: string; email: string }
                 Déconnexion
               </button>
             </div>
-          </div>
         </div>
       </div>
     </nav>

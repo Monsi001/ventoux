@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Sparkles, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info, Mountain, X, Dumbbell, Bike, Check, Calendar, Trash2, Sun, MapPin, Download, Train, Wind, Thermometer } from 'lucide-react'
