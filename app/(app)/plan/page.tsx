@@ -313,20 +313,6 @@ export default function PlanPage() {
     if (indoor) {
       const session = plan.weeks[currentWeekIdx]?.sessions.find(s => s.id === sessionId)
       if (session) {
-        // If already has a MyWhoosh workout, just reload detail
-        if (session.mywhooshWorkoutId) {
-          if (selectedSession?.id === sessionId) {
-            setSelectedSession({ ...selectedSession, indoor: true })
-            loadWorkoutDetail(session.mywhooshWorkoutId)
-          }
-          await fetch('/api/plan/update-session', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId, updates: { indoor: true } }),
-          }).catch(() => {})
-          return
-        }
-        // Otherwise, find a matching workout
         try {
           const res = await fetch(`/api/workouts?sessionType=${session.type}&duration=${session.duration}&tss=${session.tssTarget || ''}&limit=1`)
           if (res.ok) {
@@ -357,14 +343,14 @@ export default function PlanPage() {
         } catch (e) {}
       }
     } else {
-      // Toggle to outdoor — keep mywhoosh link so user can switch back
       if (selectedSession?.id === sessionId) {
-        setSelectedSession({ ...selectedSession, indoor: false })
+        setSelectedSession({ ...selectedSession, indoor })
+        setMywhooshWorkout(null)
       }
       await fetch('/api/plan/update-session', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId, updates: { indoor: false } }),
+        body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId, updates: { indoor } }),
       }).catch(() => {})
     }
   }
@@ -417,47 +403,14 @@ export default function PlanPage() {
     } catch (e) {}
   }
 
-  async function openSessionDetail(session: TrainingSession) {
+  function openSessionDetail(session: TrainingSession) {
     setSelectedSession(session)
     setMywhooshWorkout(null)
     setRideSuggestions(null)
-
-    const isCycling = session.type !== 'STRENGTH' && session.type !== 'REST'
-
     if (session.mywhooshWorkoutId) {
-      // Load existing MyWhoosh workout detail
       loadWorkoutDetail(session.mywhooshWorkoutId)
-    } else if (isCycling) {
-      // Auto-match a MyWhoosh workout for cycling sessions without one
-      try {
-        const res = await fetch(`/api/workouts?sessionType=${session.type}&duration=${session.duration}&tss=${session.tssTarget || ''}&limit=1`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.suggestions?.length > 0) {
-            const match = data.suggestions[0]
-            const updated = { ...session, mywhooshWorkoutId: match.id, mywhooshWorkoutName: match.name, indoor: session.indoor ?? true }
-            setSelectedSession(updated)
-            loadWorkoutDetail(match.id)
-            // Persist in plan
-            if (plan) {
-              const updatedWeeks = plan.weeks.map((week, idx) => {
-                if (idx !== currentWeekIdx) return week
-                return { ...week, sessions: week.sessions.map(s => s.id === session.id ? updated : s) }
-              })
-              setPlan({ ...plan, weeks: updatedWeeks })
-              fetch('/api/plan/update-session', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId: session.id, updates: { indoor: updated.indoor, mywhooshWorkoutId: match.id, mywhooshWorkoutName: match.name } }),
-              }).catch(() => {})
-            }
-          }
-        }
-      } catch {}
     }
-
-    // Load ride suggestions for outdoor cycling sessions
-    if (!session.indoor && isCycling) {
+    if (!session.indoor && session.type !== 'STRENGTH' && session.type !== 'REST') {
       loadRideSuggestions(session)
     }
   }
@@ -940,45 +893,8 @@ export default function PlanPage() {
             </div>
             <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
           </div>
-          <div className="text-sm text-stone-300 leading-relaxed space-y-3">
-            {plan!.aiNotes
-              // Split on patterns like "MOT_CLÉ:" or "(N)" numbered items
-              .split(/(?:^|\.\s+)(?=[A-ZÉÈÀÊ]{2,}[A-ZÉÈÀÊ &]*:|\(\d+\)\s)/)
-              .filter(Boolean)
-              .map((block: string, i: number) => {
-                const trimmed = block.trim().replace(/\.$/, '')
-                if (!trimmed) return null
-
-                // Detect "LABEL: content" pattern
-                const colonMatch = trimmed.match(/^([A-ZÉÈÀÊ][A-ZÉÈÀÊ &]+?):\s*(.+)/)
-                if (colonMatch) {
-                  const label = colonMatch[1].trim()
-                  const content = colonMatch[2].trim()
-                  // Skip if label is just repeating the card title
-                  if (/^DIAGNOSTIC/i.test(label)) {
-                    return content ? <p key={i}>{content}</p> : null
-                  }
-                  return (
-                    <div key={i} className="bg-white/[0.02] rounded-lg p-3">
-                      <span className="text-ventoux-400 font-semibold text-xs uppercase tracking-wider block mb-1">{label}</span>
-                      <p>{content}</p>
-                    </div>
-                  )
-                }
-
-                // Detect "(1) content" numbered items
-                const numMatch = trimmed.match(/^\((\d+)\)\s*(.+)/)
-                if (numMatch) {
-                  return (
-                    <div key={i} className="flex gap-2.5">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-ventoux-500/15 text-ventoux-400 text-xs flex items-center justify-center font-bold">{numMatch[1]}</span>
-                      <p className="flex-1">{numMatch[2]}</p>
-                    </div>
-                  )
-                }
-
-                return <p key={i}>{trimmed}</p>
-              })}
+          <div className="text-sm text-stone-300 leading-relaxed">
+            <p className="whitespace-pre-line">{plan!.aiNotes}</p>
           </div>
         </div>
       )}
@@ -1305,27 +1221,23 @@ export default function PlanPage() {
               )}
 
               {/* MyWhoosh workout */}
-              {(selectedSession.mywhooshWorkoutName || mywhooshWorkout) && selectedSession.indoor && (
+              {selectedSession.mywhooshWorkoutName && selectedSession.indoor && (
                 <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/15 overflow-hidden">
                   <div className="px-4 py-3 flex items-center gap-2 border-b border-cyan-500/10">
                     <Bike size={14} className="text-cyan-400" />
                     <h4 className="text-sm font-semibold text-cyan-300 flex-1">Workout MyWhoosh</h4>
                   </div>
                   <div className="px-4 py-3">
-                    {/* Workout name — prominent, copyable */}
-                    <div className="bg-cyan-500/10 rounded-lg px-3 py-2 mb-3">
-                      <p className="text-[10px] uppercase text-cyan-400/60 tracking-wider mb-0.5">Nom à chercher dans MyWhoosh</p>
-                      <p className="text-cyan-200 font-bold text-base">{mywhooshWorkout?.name || selectedSession.mywhooshWorkoutName}</p>
-                    </div>
+                    <p className="text-summit-light font-medium">{selectedSession.mywhooshWorkoutName}</p>
 
                     {loadingWorkout && (
-                      <div className="flex items-center gap-2 text-stone-500 text-xs">
+                      <div className="flex items-center gap-2 mt-3 text-stone-500 text-xs">
                         <Loader2 size={12} className="animate-spin" /> Chargement...
                       </div>
                     )}
 
                     {mywhooshWorkout && (
-                      <div className="space-y-3">
+                      <div className="mt-3 space-y-3">
                         {mywhooshWorkout.description && (
                           <p className="text-stone-400 text-xs leading-relaxed">{mywhooshWorkout.description}</p>
                         )}
@@ -1339,7 +1251,7 @@ export default function PlanPage() {
                         {mywhooshWorkout.steps?.length > 0 && (
                           <div>
                             <p className="text-[10px] uppercase text-stone-400 mb-1.5">Structure</p>
-                            <div className="flex gap-[1px] h-10 rounded-lg overflow-hidden">
+                            <div className="flex gap-[1px] h-8 rounded-lg overflow-hidden">
                               {mywhooshWorkout.steps.slice(0, 30).map((step: any, i: number) => {
                                 const power = step.Power || 0
                                 const hue = power <= 0.6 ? 200 : power <= 0.75 ? 160 : power <= 0.9 ? 50 : power <= 1.0 ? 30 : power <= 1.2 ? 0 : 280
@@ -1360,6 +1272,10 @@ export default function PlanPage() {
                             </div>
                           </div>
                         )}
+
+                        <p className="text-[10px] text-cyan-500/40">
+                          Cherchez &quot;{selectedSession.mywhooshWorkoutName}&quot; dans MyWhoosh
+                        </p>
                       </div>
                     )}
                   </div>
