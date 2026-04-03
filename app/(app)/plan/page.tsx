@@ -9,6 +9,8 @@ import { calculatePMC } from '@/lib/training'
 import { GlossaryButton, Term } from '@/components/ui/Tooltip'
 import { cachedFetch, invalidateCache } from '@/lib/fetch-cache'
 import SessionCard from './components/SessionCard'
+import { Confetti } from '@/components/ui/Confetti'
+import { useToast } from '@/components/ui/ToastProvider'
 
 const CoachChat = dynamic(() => import('./components/CoachChat'), { ssr: false })
 const StrengthPanelDynamic = dynamic(() => import('./components/StrengthPanel'), { ssr: false })
@@ -88,7 +90,9 @@ export default function PlanPage() {
   const [loadingRide, setLoadingRide] = useState(false)
   const [planStartDate, setPlanStartDate] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [includeStrength, setIncludeStrength] = useState(true)
+  const [showConfetti, setShowConfetti] = useState(false)
   const slideOverRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
 
   // Focus trap for session detail slide-over
   useEffect(() => {
@@ -441,6 +445,11 @@ export default function PlanPage() {
       setActivities(prev => [newActivity, ...prev])
       invalidateCache('/api/init')
 
+      // Celebration
+      setShowConfetti(true)
+      setTimeout(() => setShowConfetti(false), 3000)
+      toast('Bravo ! Séance complétée 🎉', 'celebration')
+
       // Persist to plan
       await fetch('/api/plan/update-session', {
         method: 'PATCH',
@@ -607,6 +616,7 @@ export default function PlanPage() {
   // ─── Plan view ──────────────────────────────────────────────────────────────
   return (
     <div className="animate-in pb-8">
+      <Confetti trigger={showConfetti} />
       {/* Sticky header */}
       <div className="sticky top-0 z-30 -mx-4 px-4 pt-2 pb-4 bg-gradient-to-b from-stone-950 via-stone-950/95 to-transparent">
         <div className="flex items-center justify-between gap-3 flex-wrap">
