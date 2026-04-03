@@ -122,6 +122,16 @@ h2.section-title {
   color: #6E6C69;
 }
 
+/* ─── Page transitions ──────────────────────────────────────────────────────── */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-page-in {
+  animation: pageIn 0.3s ease-out;
+}
+
 /* ─── Animations ─────────────────────────────────────────────────────────────── */
 @keyframes slideUp {
   0%   { opacity: 0; transform: translateY(16px); }
