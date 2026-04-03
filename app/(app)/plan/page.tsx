@@ -1004,7 +1004,7 @@ export default function PlanPage() {
             {/* Weekly volume chart */}
             <div>
               <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Volume hebdomadaire</h2>
-              <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 items-end" style={{ minHeight: 140 }}>
+              <div aria-label="Historique des volumes d'entraînement" className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 items-end" style={{ minHeight: 140 }}>
                 {weeksData.map(({ week, i, isPast, isCurrent, plannedHrs, plannedTss, actualHrs, actualTss, completionPct, doneSessions, totalSessions }) => {
                   const isSelected = i === currentWeekIdx
                   const barH = Math.max(8, (plannedHrs / maxHrs) * 100)
@@ -1015,19 +1015,27 @@ export default function PlanPage() {
                     <button
                       key={i}
                       onClick={() => setCurrentWeekIdx(i)}
-                      className={`flex-shrink-0 w-14 md:flex-1 md:w-auto flex flex-col items-center gap-1 transition-all rounded-lg py-1.5 px-0.5 ${
+                      className={`group/bar relative flex-shrink-0 w-14 md:flex-1 md:w-auto flex flex-col items-center gap-1 transition-all rounded-lg py-1.5 px-0.5 ${
                         isSelected
                           ? 'bg-ventoux-500/15 ring-1 ring-ventoux-500/30'
                           : 'hover:bg-white/[0.03]'
                       }`}
                     >
+                      {/* Hover tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:block z-50 pointer-events-none">
+                        <div className="bg-[#141312] border border-white/10 rounded-lg px-3 py-2 text-left whitespace-nowrap shadow-lg">
+                          <p className="text-[11px] font-medium text-summit-light">S{week.weekNumber}</p>
+                          <p className="text-[10px] text-stone-400">Prévu : {plannedHrs}h · {Math.round(plannedTss)} TSS</p>
+                          {hasActual && <p className="text-[10px] text-stone-400">Réalisé : {actualHrs}h · {Math.round(actualTss)} TSS</p>}
+                          {hasActual && totalSessions > 0 && <p className="text-[10px] text-stone-400">Séances : {doneSessions}/{totalSessions}</p>}
+                        </div>
+                      </div>
                       {/* Bars */}
                       <div className="relative w-full flex justify-center items-end gap-[2px]" style={{ height: 80 }}>
                         {/* Planned bar */}
                         <div
                           className={`w-3 rounded-t transition-all ${isPast ? 'bg-stone-800' : isCurrent ? 'bg-ventoux-500/30' : 'bg-stone-800/60'}`}
                           style={{ height: `${barH}%` }}
-                          title={`Prévu: ${plannedHrs}h`}
                         />
                         {/* Actual bar */}
                         {hasActual && (
@@ -1036,7 +1044,6 @@ export default function PlanPage() {
                               actualH >= barH * 0.8 ? 'bg-green-500' : actualH > 0 ? 'bg-amber-500' : 'bg-red-500/40'
                             }`}
                             style={{ height: `${Math.max(actualH > 0 ? 4 : 0, actualH)}%` }}
-                            title={`Réalisé: ${actualHrs}h`}
                           />
                         )}
                       </div>
