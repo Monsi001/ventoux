@@ -882,27 +882,28 @@ export default function PlanPage() {
             <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
           </div>
           <div className="text-sm text-stone-300 leading-relaxed space-y-2">
-            {plan!.aiNotes.split(/(?=DIAGNOSTIC|RISQUE|PLAN ADAPTÉ|PHASES|OBJECTIF|STRATÉGIE|RECOMMANDATION)/).map((block: string, i: number) => {
-              const colonIdx = block.indexOf(':')
-              const match = colonIdx > 0 && colonIdx < 40 ? [null, block.slice(0, colonIdx), block.slice(colonIdx + 1)] : null
-              if (match) {
-                const label = match[1]!.trim()
-                // Skip "DIAGNOSTIC & STRATÉGIE" label — redundant with the card title
-                if (label.startsWith('DIAGNOSTIC')) {
+            {(() => {
+              // Remove the leading "DIAGNOSTIC & STRATÉGIE:" prefix (redundant with card title)
+              const cleaned = plan!.aiNotes.replace(/^DIAGNOSTIC\s*&?\s*STRAT[ÉE]GIE\s*:\s*/i, '')
+              // Split on section headers
+              return cleaned.split(/(?=RISQUE\s*:|PLAN ADAPTÉ\s*:|PHASES?\s*:|OBJECTIF\s*:|RECOMMANDATION\s*:)/).map((block: string, i: number) => {
+                const colonIdx = block.indexOf(':')
+                const match = colonIdx > 0 && colonIdx < 30 ? [null, block.slice(0, colonIdx), block.slice(colonIdx + 1)] : null
+                if (match) {
+                  const label = match[1]!.trim()
                   const content = match[2]!.trim()
-                  return content ? <p key={i}>{content.charAt(0).toUpperCase() + content.slice(1)}</p> : null
+                  const capitalized = content.charAt(0).toUpperCase() + content.slice(1)
+                  return (
+                    <div key={i}>
+                      <span className="text-ventoux-400 font-semibold text-xs uppercase tracking-wider">{label}</span>
+                      <p className="mt-0.5">{capitalized}</p>
+                    </div>
+                  )
                 }
-                const content = match[2]!.trim()
-                const capitalized = content.charAt(0).toUpperCase() + content.slice(1)
-                return (
-                  <div key={i}>
-                    <span className="text-ventoux-400 font-semibold text-xs uppercase tracking-wider">{label}</span>
-                    <p className="mt-0.5">{capitalized}</p>
-                  </div>
-                )
-              }
-              return <p key={i}>{block.trim()}</p>
-            })}
+                const trimmed = block.trim()
+                return trimmed ? <p key={i}>{trimmed.charAt(0).toUpperCase() + trimmed.slice(1)}</p> : null
+              })
+            })()}
           </div>
         </div>
       )}
