@@ -6,6 +6,7 @@ import { User, Zap, Link2, Calendar, Check, Loader2, RefreshCw, Mountain } from 
 import { estimateVentouxTime, formatMinutes, POWER_ZONES, getPowerZoneBounds } from '@/lib/training'
 import type { UserProfile, WeeklyConstraint } from '@/types'
 import { invalidateCache } from '@/lib/fetch-cache'
+import { useToast } from '@/components/ui/Toast'
 
 const DAYS = [
   { key: 'mon', label: 'Lun' }, { key: 'tue', label: 'Mar' },
@@ -17,8 +18,8 @@ const DAYS = [
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [form, setForm] = useState({ name: '', height: '', weight: '', ftp: '' })
+  const { toast } = useToast()
 
   // Contraintes
   const [constraints, setConstraints] = useState<WeeklyConstraint[]>([])
@@ -83,8 +84,7 @@ export default function ProfilePage() {
     }
 
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    toast('Profil mis à jour', 'success')
     loadProfile()
   }
 
@@ -153,8 +153,8 @@ export default function ProfilePage() {
           disabled={saving}
           className="btn-primary flex items-center gap-2 mt-5"
         >
-          {saving ? <Loader2 size={15} className="animate-spin" /> : saved ? <Check size={15} /> : null}
-          {saved ? 'Sauvegardé !' : 'Enregistrer'}
+          {saving ? <Loader2 size={15} className="animate-spin" /> : null}
+          Enregistrer
         </button>
       </div>
 
