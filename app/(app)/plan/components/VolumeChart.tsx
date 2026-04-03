@@ -49,7 +49,7 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
 
   const maxHrs = Math.max(...weeksData.map(w => Math.max(w.plannedHrs, w.actualHrs)), 1)
 
-  // Monthly aggregation
+  // Monthly aggregation — only months covered by the plan
   const months = new Map<string, { plannedHrs: number, actualHrs: number, plannedTss: number, actualTss: number, done: number, total: number }>()
 
   weeksData.forEach(w => {
@@ -60,23 +60,23 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
     m.plannedTss += w.plannedTss
     m.done += w.doneSessions
     m.total += w.totalSessions
-  })
-
-  activities.forEach(a => {
-    const monthKey = format(new Date(a.date), 'yyyy-MM')
-    if (!months.has(monthKey)) months.set(monthKey, { plannedHrs: 0, actualHrs: 0, plannedTss: 0, actualTss: 0, done: 0, total: 0 })
-    const m = months.get(monthKey)!
-    m.actualHrs += a.duration / 3600
-    m.actualTss += a.tss || 0
+    // Actual hours/TSS from activities matching this week only
+    w.weekActivities.forEach(a => {
+      m.actualHrs += a.duration / 3600
+      m.actualTss += a.tss || 0
+    })
   })
 
   months.forEach(m => { m.actualHrs = Math.round(m.actualHrs * 10) / 10 })
+
+  // Sort months chronologically
+  const sortedMonths = Array.from(months.entries()).sort(([a], [b]) => a.localeCompare(b))
 
   return (
     <div className="mt-8 space-y-6">
       {/* Weekly volume chart */}
       <div>
-        <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Volume hebdomadaire</h2>
+        <h2 className="text-xs uppercase text-stone-400 tracking-widest mb-3">Volume hebdomadaire</h2>
         <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 items-end" style={{ minHeight: 140 }}>
           {weeksData.map(({ week, i, isPast, isCurrent, plannedHrs, plannedTss, actualHrs, actualTss, completionPct, doneSessions, totalSessions }) => {
             const isSelected = i === currentWeekIdx
@@ -114,13 +114,13 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
 
                 {hasActual && totalSessions > 0 && (
                   <div className={`text-[9px] font-medium px-1 rounded ${
-                    completionPct >= 80 ? 'text-green-400' : completionPct > 0 ? 'text-amber-400' : 'text-stone-600'
+                    completionPct >= 80 ? 'text-green-400' : completionPct > 0 ? 'text-amber-400' : 'text-stone-400'
                   }`}>
                     {doneSessions}/{totalSessions}
                   </div>
                 )}
 
-                <p className={`text-[10px] font-mono font-bold ${isSelected ? 'text-ventoux-400' : isCurrent ? 'text-summit-light' : 'text-stone-600'}`}>
+                <p className={`text-[10px] font-mono font-bold ${isSelected ? 'text-ventoux-400' : isCurrent ? 'text-summit-light' : 'text-stone-400'}`}>
                   S{week.weekNumber}
                 </p>
                 <p className={`text-[9px] ${isSelected ? 'text-stone-400' : 'text-stone-700'}`}>{plannedHrs}h</p>
@@ -136,18 +136,18 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
             )
           })}
         </div>
-        <div className="flex items-center gap-4 mt-2 text-[10px] text-stone-600">
+        <div className="flex items-center gap-4 mt-2 text-[10px] text-stone-400">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-stone-800 inline-block" /> Prévu</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500 inline-block" /> Réalisé</span>
         </div>
       </div>
 
       {/* Monthly summary */}
-      {months.size > 1 && (
+      {sortedMonths.length > 1 && (
         <div>
-          <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Bilan mensuel</h2>
+          <h2 className="text-xs uppercase text-stone-400 tracking-widest mb-3">Bilan mensuel</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {Array.from(months.entries()).map(([key, m]) => {
+            {sortedMonths.map(([key, m]) => {
               const label = format(new Date(key + '-01'), 'MMM yyyy', { locale: fr })
               const pct = m.total > 0 ? Math.round(m.done / m.total * 100) : 0
               return (
@@ -155,17 +155,17 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
                   <p className="text-xs font-medium text-stone-400 capitalize">{label}</p>
                   <div className="flex items-baseline gap-2">
                     <span className="font-display text-lg font-bold text-summit-light">{Math.round(m.actualHrs * 10) / 10}h</span>
-                    <span className="text-[10px] text-stone-600">/ {Math.round(m.plannedHrs * 10) / 10}h</span>
+                    <span className="text-[10px] text-stone-400">/ {Math.round(m.plannedHrs * 10) / 10}h</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xs text-summit-light font-medium">{Math.round(m.actualTss)} <span className="text-stone-600">TSS</span></span>
-                    <span className="text-[10px] text-stone-600">/ {Math.round(m.plannedTss)}</span>
+                    <span className="text-xs text-summit-light font-medium">{Math.round(m.actualTss)} <span className="text-stone-400">TSS</span></span>
+                    <span className="text-[10px] text-stone-400">/ {Math.round(m.plannedTss)}</span>
                   </div>
                   {m.total > 0 && (
                     <div>
                       <div className="flex justify-between text-[10px] mb-1">
-                        <span className="text-stone-600">Complétion</span>
-                        <span className={pct >= 80 ? 'text-green-400' : pct > 0 ? 'text-amber-400' : 'text-stone-600'}>{pct}%</span>
+                        <span className="text-stone-400">Complétion</span>
+                        <span className={pct >= 80 ? 'text-green-400' : pct > 0 ? 'text-amber-400' : 'text-stone-400'}>{pct}%</span>
                       </div>
                       <div className="h-1 rounded-full bg-white/[0.05] overflow-hidden">
                         <div
