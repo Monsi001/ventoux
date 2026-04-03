@@ -1,5 +1,5 @@
 'use client'
-import { format, addDays } from 'date-fns'
+import { format, addDays, startOfWeek, subWeeks } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Clock, Zap, CheckCircle2, TrendingUp, Mountain, Heart, Gauge, Flame, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
@@ -28,7 +28,7 @@ function formatDur(seconds: number): string {
 }
 
 export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSelect }: VolumeChartProps) {
-  const [expandedWeek, setExpandedWeek] = useState<number | null>(null)
+  const [expandedWeek, setExpandedWeek] = useState<string | null>(null)
 
   if (!plan.weeks || plan.weeks.length <= 1) return null
 
@@ -85,6 +85,67 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
     }
   })
 
+  // Build historical weeks from activities before the plan
+  const firstPlanDate = plan.weeks[0] ? new Date(plan.weeks[0].weekStart) : new Date()
+  const historicalActivities = activities.filter(a => new Date(a.date) < firstPlanDate)
+
+  type WeekRow = typeof weeksData[0] & { isHistorical?: boolean; weekLabel?: string }
+
+  const historicalWeeks: WeekRow[] = []
+  if (historicalActivities.length > 0) {
+    // Group by ISO week
+    const weekMap = new Map<string, Activity[]>()
+    historicalActivities.forEach(a => {
+      const ws = startOfWeek(new Date(a.date), { weekStartsOn: 1 })
+      const key = format(ws, 'yyyy-MM-dd')
+      if (!weekMap.has(key)) weekMap.set(key, [])
+      weekMap.get(key)!.push(a)
+    })
+
+    // Only keep last 8 historical weeks max
+    const sortedKeys = Array.from(weekMap.keys()).sort().slice(-8)
+    sortedKeys.forEach((key) => {
+      const wa = weekMap.get(key)!
+      const weekStart = new Date(key)
+      const totalDuration = wa.reduce((s, a) => s + (a.duration || 0), 0)
+      const withPower = wa.filter(a => a.avgPower)
+      const withNP = wa.filter(a => a.normalizedPower)
+      const withHr = wa.filter(a => a.avgHr)
+      const withIF = wa.filter(a => a.intensityFactor)
+      const withSpeed = wa.filter(a => a.avgSpeed)
+
+      historicalWeeks.push({
+        week: { weekStart: key, weekNumber: 0, sessions: [], phase: '', notes: '' } as unknown as TrainingWeek,
+        i: -1,
+        isPast: true,
+        isCurrent: false,
+        isHistorical: true,
+        weekLabel: format(weekStart, 'd MMM', { locale: fr }) + ' — ' + format(addDays(weekStart, 6), 'd MMM', { locale: fr }),
+        plannedHrs: 0,
+        plannedTss: 0,
+        actualHrs: Math.round(totalDuration / 3600 * 10) / 10,
+        actualTss: Math.round(wa.reduce((s, a) => s + (a.tss || 0), 0)),
+        totalDistance: Math.round(wa.reduce((s, a) => s + (a.distance || 0), 0) * 10) / 10,
+        totalElevation: Math.round(wa.reduce((s, a) => s + (a.elevation || 0), 0)),
+        totalCalories: Math.round(wa.reduce((s, a) => s + (a.calories || 0), 0)),
+        avgPower: withPower.length > 0 ? Math.round(withPower.reduce((s, a) => s + a.avgPower!, 0) / withPower.length) : null,
+        maxPower: wa.reduce((m, a) => Math.max(m, a.maxPower || 0), 0) || null,
+        avgNP: withNP.length > 0 ? Math.round(withNP.reduce((s, a) => s + a.normalizedPower!, 0) / withNP.length) : null,
+        avgHr: withHr.length > 0 ? Math.round(withHr.reduce((s, a) => s + a.avgHr!, 0) / withHr.length) : null,
+        maxHr: wa.reduce((m, a) => Math.max(m, a.maxHr || 0), 0) || null,
+        avgIF: withIF.length > 0 ? Math.round(withIF.reduce((s, a) => s + a.intensityFactor!, 0) / withIF.length * 100) / 100 : null,
+        avgSpeed: withSpeed.length > 0 ? Math.round(withSpeed.reduce((s, a) => s + a.avgSpeed!, 0) / withSpeed.length * 10) / 10 : null,
+        doneSessions: 0,
+        totalSessions: 0,
+        completionPct: 0,
+        weekActivities: wa,
+        totalDuration,
+      })
+    })
+  }
+
+  const allWeeks: WeekRow[] = [...historicalWeeks, ...weeksData]
+
   // Monthly aggregation
   const monthsMap = new Map<string, { plannedHrs: number; actualHrs: number; plannedTss: number; actualTss: number; done: number; total: number; distance: number; elevation: number; calories: number }>()
   weeksData.forEach(w => {
@@ -118,17 +179,18 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
       <div>
         <h2 className="text-xs uppercase text-stone-400 tracking-widest mb-3">Récap hebdomadaire</h2>
         <div className="grid gap-2">
-          {weeksData.map((w) => {
-            const isSelected = w.i === currentWeekIdx
+          {allWeeks.map((w) => {
+            const weekKey = w.week.weekStart
+            const isSelected = !w.isHistorical && w.i === currentWeekIdx
             const hasActual = w.isPast || w.isCurrent
             const hasStats = hasActual && w.weekActivities.length > 0
-            const isExpanded = expandedWeek === w.i
+            const isExpanded = expandedWeek === weekKey
             const hrsPct = w.plannedHrs > 0 ? Math.min(Math.round((w.actualHrs / w.plannedHrs) * 100), 100) : 0
             const weekStart = new Date(w.week.weekStart)
 
             return (
               <div
-                key={w.i}
+                key={weekKey}
                 className={`rounded-xl transition-all ${
                   isSelected
                     ? 'bg-ventoux-500/10 ring-1 ring-ventoux-500/30'
@@ -139,16 +201,16 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
               >
                 {/* Main row — always visible */}
                 <button
-                  onClick={() => onWeekSelect(w.i)}
+                  onClick={() => { if (!w.isHistorical) onWeekSelect(w.i) }}
                   className="w-full text-left p-4"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className={`font-display font-bold text-sm ${isSelected ? 'text-ventoux-400' : 'text-summit-light'}`}>
-                        S{w.week.weekNumber}
+                      <span className={`font-display font-bold text-sm ${w.isHistorical ? 'text-stone-400' : isSelected ? 'text-ventoux-400' : 'text-summit-light'}`}>
+                        {w.isHistorical ? 'Avant plan' : `S${w.week.weekNumber}`}
                       </span>
                       <span className="text-stone-400 text-xs">
-                        {format(weekStart, 'd MMM', { locale: fr })} — {format(addDays(weekStart, 6), 'd MMM', { locale: fr })}
+                        {w.weekLabel || `${format(weekStart, 'd MMM', { locale: fr })} — ${format(addDays(weekStart, 6), 'd MMM', { locale: fr })}`}
                       </span>
                       {w.isCurrent && <span className="text-[10px] px-1.5 py-0.5 rounded bg-ventoux-500/20 text-ventoux-400 font-medium">En cours</span>}
                       {w.isPast && hasStats && (
@@ -208,21 +270,22 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
                   </div>
                 </button>
 
-                {/* Expand button for past weeks with data */}
-                {hasStats && (
-                  <div className="px-4 pb-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setExpandedWeek(isExpanded ? null : w.i) }}
-                      className="flex items-center gap-1 text-stone-400 hover:text-stone-300 text-xs transition-colors py-1"
-                    >
-                      {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                      {isExpanded ? 'Masquer les stats' : `Voir les stats détaillées (${w.weekActivities.length} activité${w.weekActivities.length > 1 ? 's' : ''})`}
-                    </button>
-                  </div>
-                )}
+                {/* Expand button — always available */}
+                <div className="px-4 pb-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setExpandedWeek(isExpanded ? null : weekKey) }}
+                    className="flex items-center gap-1 text-stone-400 hover:text-stone-300 text-xs transition-colors py-1"
+                  >
+                    {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    {isExpanded ? 'Masquer' : hasStats
+                      ? `Stats détaillées (${w.weekActivities.length} activité${w.weekActivities.length > 1 ? 's' : ''})`
+                      : `Détail des ${w.totalSessions} séances prévues`
+                    }
+                  </button>
+                </div>
 
-                {/* Expanded KPI section */}
-                {isExpanded && hasStats && (
+                {/* Expanded section */}
+                {isExpanded && (
                   <div className="px-4 pb-4 border-t border-white/[0.04] mt-1 pt-3">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {/* Distance */}
@@ -308,19 +371,39 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
                       </div>
                     </div>
 
-                    {/* Individual activities list */}
-                    <div className="mt-3 space-y-1">
-                      {w.weekActivities.map(a => (
-                        <div key={a.id} className="flex items-center gap-3 text-xs py-1.5 px-2 rounded-lg hover:bg-white/[0.02]">
-                          <span className="text-stone-500 w-12 flex-shrink-0">{format(new Date(a.date), 'EEE d', { locale: fr })}</span>
-                          <span className="text-summit-light font-medium truncate flex-1">{a.name}</span>
-                          <span className="text-stone-400 flex-shrink-0">{formatDur(a.duration)}</span>
-                          {a.distance && <span className="text-stone-400 flex-shrink-0">{a.distance.toFixed(1)}km</span>}
-                          {a.tss && <span className="text-ventoux-400 flex-shrink-0 font-medium">TSS {Math.round(a.tss)}</span>}
-                          {a.avgPower && <span className="text-stone-400 flex-shrink-0">{a.avgPower}W</span>}
-                        </div>
-                      ))}
-                    </div>
+                    {/* Activities list (for weeks with data) */}
+                    {w.weekActivities.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-stone-400 text-[10px] uppercase tracking-wider mb-1">Activités réalisées</p>
+                        {w.weekActivities.map(a => (
+                          <div key={a.id} className="flex items-center gap-3 text-xs py-1.5 px-2 rounded-lg hover:bg-white/[0.02]">
+                            <span className="text-stone-500 w-12 flex-shrink-0">{format(new Date(a.date), 'EEE d', { locale: fr })}</span>
+                            <span className="text-summit-light font-medium truncate flex-1">{a.name}</span>
+                            <span className="text-stone-400 flex-shrink-0">{formatDur(a.duration)}</span>
+                            {a.distance && <span className="text-stone-400 flex-shrink-0">{a.distance.toFixed(1)}km</span>}
+                            {a.tss && <span className="text-ventoux-400 flex-shrink-0 font-medium">TSS {Math.round(a.tss)}</span>}
+                            {a.avgPower && <span className="text-stone-400 flex-shrink-0">{a.avgPower}W</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Planned sessions detail (for weeks without full activity data) */}
+                    {!w.isHistorical && w.week.sessions?.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-stone-400 text-[10px] uppercase tracking-wider mb-1">Séances prévues</p>
+                        {w.week.sessions.map((s: any) => (
+                          <div key={s.id} className="flex items-center gap-3 text-xs py-1.5 px-2 rounded-lg bg-white/[0.015]">
+                            <span className="text-stone-500 w-8 flex-shrink-0 uppercase">{s.day?.slice(0, 3)}</span>
+                            <span className="text-summit-light font-medium truncate flex-1">{s.name || s.type}</span>
+                            <span className="text-stone-400 flex-shrink-0">{s.duration}min</span>
+                            {s.tssTarget && <span className="text-ventoux-400/70 flex-shrink-0">TSS ~{s.tssTarget}</span>}
+                            {s.intensityZone && <span className="text-stone-500 flex-shrink-0">Z{s.intensityZone}</span>}
+                            {s.completed && <CheckCircle2 size={12} className="text-emerald-400 flex-shrink-0" />}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

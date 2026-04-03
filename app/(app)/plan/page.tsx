@@ -884,7 +884,8 @@ export default function PlanPage() {
           <div className="text-sm text-stone-300 leading-relaxed space-y-2">
             {(() => {
               // Remove the leading "DIAGNOSTIC & STRATÉGIE:" prefix (redundant with card title)
-              const cleaned = plan!.aiNotes.replace(/^DIAGNOSTIC\s*&?\s*STRAT[ÉE]GIE\s*:\s*/i, '')
+              // Also handles variations: "DIAGNOSTIC:", "DIAGNOSTIC & STRATEGIE:", etc.
+              const cleaned = plan!.aiNotes.replace(/^DIAGNOSTIC[^:]*:\s*/i, '')
               // Split on section headers
               return cleaned.split(/(?=RISQUE\s*:|PLAN ADAPTÉ\s*:|PHASES?\s*:|OBJECTIF\s*:|RECOMMANDATION\s*:)/).map((block: string, i: number) => {
                 const colonIdx = block.indexOf(':')
