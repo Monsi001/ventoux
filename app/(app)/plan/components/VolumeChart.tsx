@@ -1,6 +1,7 @@
 'use client'
 import { format, addDays } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { Clock, Zap, CheckCircle2 } from 'lucide-react'
 import type { TrainingPlan, TrainingWeek, Activity } from '@/types'
 
 const PHASE_COLORS: Record<string, string> = {
@@ -38,7 +39,7 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
       return d >= weekStart && d <= weekEnd
     })
     const actualHrs = Math.round(weekActivities.reduce((sum, a) => sum + (a.duration || 0), 0) / 3600 * 10) / 10
-    const actualTss = weekActivities.reduce((sum, a) => sum + (a.tss || 0), 0)
+    const actualTss = Math.round(weekActivities.reduce((sum, a) => sum + (a.tss || 0), 0))
 
     const totalSessions = week.sessions?.length || 0
     const doneSessions = week.sessions?.filter(s => s.completed).length || 0
@@ -47,134 +48,160 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
     return { week, i, isPast, isCurrent, plannedHrs, plannedTss, actualHrs, actualTss, doneSessions, totalSessions, completionPct, weekActivities }
   })
 
-  const maxHrs = Math.max(...weeksData.map(w => Math.max(w.plannedHrs, w.actualHrs)), 1)
-
   // Monthly aggregation — only months covered by the plan
-  const months = new Map<string, { plannedHrs: number, actualHrs: number, plannedTss: number, actualTss: number, done: number, total: number }>()
-
+  const monthsMap = new Map<string, { plannedHrs: number; actualHrs: number; plannedTss: number; actualTss: number; done: number; total: number }>()
   weeksData.forEach(w => {
     const monthKey = format(new Date(w.week.weekStart), 'yyyy-MM')
-    if (!months.has(monthKey)) months.set(monthKey, { plannedHrs: 0, actualHrs: 0, plannedTss: 0, actualTss: 0, done: 0, total: 0 })
-    const m = months.get(monthKey)!
+    if (!monthsMap.has(monthKey)) monthsMap.set(monthKey, { plannedHrs: 0, actualHrs: 0, plannedTss: 0, actualTss: 0, done: 0, total: 0 })
+    const m = monthsMap.get(monthKey)!
     m.plannedHrs += w.plannedHrs
     m.plannedTss += w.plannedTss
     m.done += w.doneSessions
     m.total += w.totalSessions
-    // Actual hours/TSS from activities matching this week only
     w.weekActivities.forEach(a => {
       m.actualHrs += a.duration / 3600
       m.actualTss += a.tss || 0
     })
   })
-
-  months.forEach(m => { m.actualHrs = Math.round(m.actualHrs * 10) / 10 })
-
-  // Sort months chronologically
-  const sortedMonths = Array.from(months.entries()).sort(([a], [b]) => a.localeCompare(b))
+  monthsMap.forEach(m => { m.actualHrs = Math.round(m.actualHrs * 10) / 10; m.actualTss = Math.round(m.actualTss) })
+  const sortedMonths = Array.from(monthsMap.entries()).sort(([a], [b]) => a.localeCompare(b))
 
   return (
-    <div className="mt-8 space-y-6">
-      {/* Weekly volume chart */}
+    <div className="mt-8 space-y-8">
+      {/* Weekly recap table */}
       <div>
-        <h2 className="text-xs uppercase text-stone-400 tracking-widest mb-3">Volume hebdomadaire</h2>
-        <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 items-end" style={{ minHeight: 140 }}>
+        <h2 className="text-xs uppercase text-stone-400 tracking-widest mb-3">Récap hebdomadaire</h2>
+        <div className="grid gap-2">
           {weeksData.map(({ week, i, isPast, isCurrent, plannedHrs, plannedTss, actualHrs, actualTss, completionPct, doneSessions, totalSessions }) => {
             const isSelected = i === currentWeekIdx
-            const barH = Math.max(8, (plannedHrs / maxHrs) * 100)
-            const actualH = Math.max(0, (actualHrs / maxHrs) * 100)
             const hasActual = isPast || isCurrent
+            const hrsPct = plannedHrs > 0 ? Math.min(Math.round((actualHrs / plannedHrs) * 100), 100) : 0
+            const weekStart = new Date(week.weekStart)
 
             return (
               <button
                 key={i}
                 onClick={() => onWeekSelect(i)}
-                className={`flex-shrink-0 w-14 md:flex-1 md:w-auto flex flex-col items-center gap-1 transition-all rounded-lg py-1.5 px-0.5 ${
+                className={`w-full text-left rounded-xl p-4 transition-all ${
                   isSelected
-                    ? 'bg-ventoux-500/15 ring-1 ring-ventoux-500/30'
-                    : 'hover:bg-white/[0.03]'
+                    ? 'bg-ventoux-500/10 ring-1 ring-ventoux-500/30'
+                    : isCurrent
+                    ? 'bg-white/[0.04] ring-1 ring-white/[0.08]'
+                    : 'bg-white/[0.02] hover:bg-white/[0.04]'
                 }`}
               >
-                {/* Bars */}
-                <div className="relative w-full flex justify-center items-end gap-[2px]" style={{ height: 80 }}>
-                  <div
-                    className={`w-3 rounded-t transition-all ${isPast ? 'bg-stone-800' : isCurrent ? 'bg-ventoux-500/30' : 'bg-stone-800/60'}`}
-                    style={{ height: `${barH}%` }}
-                    title={`Prévu: ${plannedHrs}h`}
-                  />
-                  {hasActual && (
-                    <div
-                      className={`w-3 rounded-t transition-all ${
-                        actualH >= barH * 0.8 ? 'bg-green-500' : actualH > 0 ? 'bg-amber-500' : 'bg-red-500/40'
-                      }`}
-                      style={{ height: `${Math.max(actualH > 0 ? 4 : 0, actualH)}%` }}
-                      title={`Réalisé: ${actualHrs}h`}
-                    />
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-display font-bold text-sm ${isSelected ? 'text-ventoux-400' : 'text-summit-light'}`}>
+                      S{week.weekNumber}
+                    </span>
+                    <span className="text-stone-400 text-xs">
+                      {format(weekStart, 'd MMM', { locale: fr })} — {format(addDays(weekStart, 6), 'd MMM', { locale: fr })}
+                    </span>
+                    {isCurrent && <span className="text-[10px] px-1.5 py-0.5 rounded bg-ventoux-500/20 text-ventoux-400 font-medium">En cours</span>}
+                  </div>
+                  {week.phase && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${PHASE_COLORS[week.phase] || ''}`}>
+                      {week.phase}
+                    </span>
                   )}
                 </div>
 
-                {hasActual && totalSessions > 0 && (
-                  <div className={`text-[9px] font-medium px-1 rounded ${
-                    completionPct >= 80 ? 'text-green-400' : completionPct > 0 ? 'text-amber-400' : 'text-stone-400'
-                  }`}>
-                    {doneSessions}/{totalSessions}
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Volume */}
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-stone-500 flex-shrink-0" />
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-sm font-bold ${hasActual && actualHrs > 0 ? 'text-summit-light' : 'text-stone-400'}`}>
+                          {hasActual ? `${actualHrs}h` : '—'}
+                        </span>
+                        <span className="text-stone-400 text-xs">/ {plannedHrs}h</span>
+                      </div>
+                      {hasActual && plannedHrs > 0 && (
+                        <div className="mt-1 h-1 w-16 rounded-full bg-white/[0.06] overflow-hidden">
+                          <div className={`h-full rounded-full ${hrsPct >= 80 ? 'bg-emerald-500' : hrsPct > 0 ? 'bg-amber-500' : 'bg-stone-700'}`} style={{ width: `${hrsPct}%` }} />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
 
-                <p className={`text-[10px] font-mono font-bold ${isSelected ? 'text-ventoux-400' : isCurrent ? 'text-summit-light' : 'text-stone-400'}`}>
-                  S{week.weekNumber}
-                </p>
-                <p className={`text-[9px] ${isSelected ? 'text-stone-400' : 'text-stone-700'}`}>{plannedHrs}h</p>
-                <p className={`text-[8px] font-mono ${hasActual && actualTss > 0 ? (actualTss >= plannedTss * 0.8 ? 'text-green-500/70' : 'text-amber-500/70') : 'text-stone-700'}`}>
-                  {hasActual && actualTss > 0 ? `${Math.round(actualTss)}` : plannedTss > 0 ? `${Math.round(plannedTss)}` : ''}{(hasActual && actualTss > 0) || plannedTss > 0 ? ' TSS' : ''}
-                </p>
-                {week.phase && (
-                  <div className={`text-[7px] px-1 py-0.5 rounded leading-none ${PHASE_COLORS[week.phase] || ''}`}>
-                    {week.phase}
+                  {/* TSS */}
+                  <div className="flex items-center gap-2">
+                    <Zap size={14} className="text-stone-500 flex-shrink-0" />
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-sm font-bold ${hasActual && actualTss > 0 ? 'text-summit-light' : 'text-stone-400'}`}>
+                          {hasActual && actualTss > 0 ? actualTss : '—'}
+                        </span>
+                        <span className="text-stone-400 text-xs">/ {Math.round(plannedTss)} TSS</span>
+                      </div>
+                    </div>
                   </div>
-                )}
+
+                  {/* Complétion */}
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className={completionPct >= 80 ? 'text-emerald-400' : completionPct > 0 ? 'text-amber-400' : 'text-stone-500'} />
+                    <div>
+                      <span className={`text-sm font-bold ${completionPct >= 80 ? 'text-emerald-400' : completionPct > 0 ? 'text-amber-400' : 'text-stone-400'}`}>
+                        {doneSessions}/{totalSessions}
+                      </span>
+                      <span className="text-stone-400 text-xs ml-1">séances</span>
+                    </div>
+                  </div>
+                </div>
               </button>
             )
           })}
         </div>
-        <div className="flex items-center gap-4 mt-2 text-[10px] text-stone-400">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-stone-800 inline-block" /> Prévu</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500 inline-block" /> Réalisé</span>
-        </div>
       </div>
 
       {/* Monthly summary */}
-      {sortedMonths.length > 1 && (
+      {sortedMonths.length > 0 && (
         <div>
           <h2 className="text-xs uppercase text-stone-400 tracking-widest mb-3">Bilan mensuel</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {sortedMonths.map(([key, m]) => {
-              const label = format(new Date(key + '-01'), 'MMM yyyy', { locale: fr })
+              const label = format(new Date(key + '-01'), 'MMMM yyyy', { locale: fr })
               const pct = m.total > 0 ? Math.round(m.done / m.total * 100) : 0
+              const hrsPct = m.plannedHrs > 0 ? Math.min(Math.round((m.actualHrs / m.plannedHrs) * 100), 100) : 0
+
               return (
-                <div key={key} className="bg-white/[0.02] rounded-xl p-3 space-y-2">
-                  <p className="text-xs font-medium text-stone-400 capitalize">{label}</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-display text-lg font-bold text-summit-light">{Math.round(m.actualHrs * 10) / 10}h</span>
-                    <span className="text-[10px] text-stone-400">/ {Math.round(m.plannedHrs * 10) / 10}h</span>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs text-summit-light font-medium">{Math.round(m.actualTss)} <span className="text-stone-400">TSS</span></span>
-                    <span className="text-[10px] text-stone-400">/ {Math.round(m.plannedTss)}</span>
-                  </div>
-                  {m.total > 0 && (
+                <div key={key} className="card p-4">
+                  <p className="text-sm font-medium text-summit-light capitalize mb-3">{label}</p>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Volume */}
                     <div>
-                      <div className="flex justify-between text-[10px] mb-1">
-                        <span className="text-stone-400">Complétion</span>
-                        <span className={pct >= 80 ? 'text-green-400' : pct > 0 ? 'text-amber-400' : 'text-stone-400'}>{pct}%</span>
-                      </div>
-                      <div className="h-1 rounded-full bg-white/[0.05] overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${pct >= 80 ? 'bg-green-500' : pct > 0 ? 'bg-amber-500' : 'bg-stone-700'}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
+                      <p className="text-stone-400 text-[10px] uppercase tracking-wider mb-1">Volume</p>
+                      <p className="font-display text-lg font-bold text-summit-light">{m.actualHrs}h</p>
+                      <p className="text-stone-400 text-xs">sur {Math.round(m.plannedHrs * 10) / 10}h prévues</p>
+                      {m.plannedHrs > 0 && (
+                        <div className="mt-1.5 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                          <div className={`h-full rounded-full ${hrsPct >= 80 ? 'bg-emerald-500' : hrsPct > 0 ? 'bg-amber-500' : 'bg-stone-700'}`} style={{ width: `${hrsPct}%` }} />
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* TSS */}
+                    <div>
+                      <p className="text-stone-400 text-[10px] uppercase tracking-wider mb-1">TSS</p>
+                      <p className="font-display text-lg font-bold text-summit-light">{m.actualTss}</p>
+                      <p className="text-stone-400 text-xs">sur {Math.round(m.plannedTss)} prévus</p>
+                    </div>
+
+                    {/* Complétion */}
+                    <div>
+                      <p className="text-stone-400 text-[10px] uppercase tracking-wider mb-1">Complétion</p>
+                      <p className={`font-display text-lg font-bold ${pct >= 80 ? 'text-emerald-400' : pct > 0 ? 'text-amber-400' : 'text-stone-400'}`}>{pct}%</p>
+                      <p className="text-stone-400 text-xs">{m.done}/{m.total} séances</p>
+                      {m.total > 0 && (
+                        <div className="mt-1.5 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                          <div className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct > 0 ? 'bg-amber-500' : 'bg-stone-700'}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )
             })}
