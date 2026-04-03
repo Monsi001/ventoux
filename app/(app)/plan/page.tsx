@@ -860,12 +860,20 @@ export default function PlanPage() {
           <div className="text-sm text-stone-300 leading-relaxed space-y-2">
             {plan!.aiNotes.split(/(?=DIAGNOSTIC|RISQUE|PLAN ADAPTÉ|PHASES|OBJECTIF|STRATÉGIE|RECOMMANDATION)/).map((block: string, i: number) => {
               const colonIdx = block.indexOf(':')
-              const match = colonIdx > 0 && colonIdx < 30 ? [null, block.slice(0, colonIdx), block.slice(colonIdx + 1)] : null
+              const match = colonIdx > 0 && colonIdx < 40 ? [null, block.slice(0, colonIdx), block.slice(colonIdx + 1)] : null
               if (match) {
+                const label = match[1]!.trim()
+                // Skip "DIAGNOSTIC & STRATÉGIE" label — redundant with the card title
+                if (label.startsWith('DIAGNOSTIC')) {
+                  const content = match[2]!.trim()
+                  return content ? <p key={i}>{content.charAt(0).toUpperCase() + content.slice(1)}</p> : null
+                }
+                const content = match[2]!.trim()
+                const capitalized = content.charAt(0).toUpperCase() + content.slice(1)
                 return (
                   <div key={i}>
-                    <span className="text-ventoux-400 font-semibold text-xs uppercase tracking-wider">{match[1]!.trim()}</span>
-                    <p className="mt-0.5">{match[2]!.trim()}</p>
+                    <span className="text-ventoux-400 font-semibold text-xs uppercase tracking-wider">{label}</span>
+                    <p className="mt-0.5">{capitalized}</p>
                   </div>
                 )
               }
