@@ -908,9 +908,20 @@ export default function PlanPage() {
               const dayActivity = getActivityForDay(currentWeek.weekStart, i)
 
               return (
-                <div key={dayKey} className={`rounded-xl min-h-[160px] flex flex-col ${
-                  isToday ? 'ring-1 ring-ventoux-500/40 bg-ventoux-500/[0.03]' : 'bg-white/[0.015]'
-                }`}>
+                <div
+                  key={dayKey}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-ventoux-500/30') }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-ventoux-500/30') }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    e.currentTarget.classList.remove('ring-2', 'ring-ventoux-500/30')
+                    const sessionId = e.dataTransfer.getData('sessionId')
+                    if (sessionId) moveSession(sessionId, dayKey)
+                  }}
+                  className={`rounded-xl min-h-[160px] flex flex-col transition-all ${
+                    isToday ? 'ring-1 ring-ventoux-500/40 bg-ventoux-500/[0.03]' : 'bg-white/[0.015]'
+                  }`}
+                >
                   {/* Day header */}
                   <div className={`px-2.5 py-2 text-center border-b border-white/[0.04] ${isToday ? 'text-ventoux-400' : 'text-stone-600'}`}>
                     <p className="text-xs font-medium">{DAYS_FR[i]}</p>
@@ -932,6 +943,7 @@ export default function PlanPage() {
                         onClick={() => openSessionDetail(session)}
                         done={!!dayActivity || !!session.completed}
                         compact
+                        draggable
                       />
                     ))}
                     {sessions.length === 0 && !dayActivity && (
