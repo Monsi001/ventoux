@@ -69,7 +69,9 @@ export async function POST() {
         create: { ...mapped, tss },
       })
       imported++
-    } catch {}
+    } catch (err) {
+      console.error(`Strava upsert failed for activity ${mapped.stravaId}:`, err)
+    }
   }
 
   return NextResponse.json({ synced: imported, total: activities.length })

@@ -59,10 +59,7 @@ export async function sendPasswordResetEmail(email: string, token: string, name:
 }
 
 export function generateToken(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  let token = ''
   const bytes = new Uint8Array(32)
   crypto.getRandomValues(bytes)
-  for (const b of bytes) token += chars[b % chars.length]
-  return token
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
 }

@@ -25,13 +25,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 })
   }
 
+  const parsedDistance = parseFloat(distance)
+  const parsedElevation = parseInt(elevation)
+  if (isNaN(parsedDistance) || isNaN(parsedElevation) || parsedDistance <= 0 || parsedElevation < 0) {
+    return NextResponse.json({ error: 'Distance ou dénivelé invalide' }, { status: 400 })
+  }
+
+  const parsedDate = new Date(date)
+  if (isNaN(parsedDate.getTime())) {
+    return NextResponse.json({ error: 'Date invalide' }, { status: 400 })
+  }
+
   const race = await prisma.race.create({
     data: {
       userId: session.user.id,
       name,
-      date: new Date(date),
-      distance: parseFloat(distance),
-      elevation: parseInt(elevation),
+      date: parsedDate,
+      distance: parsedDistance,
+      elevation: parsedElevation,
       location: location || null,
       targetLevel: targetLevel || 'FINISH',
       notes: notes || null,

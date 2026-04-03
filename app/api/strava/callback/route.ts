@@ -16,6 +16,14 @@ export async function GET(req: Request) {
     )
   }
 
+  // Vérifier que le state correspond à un userId existant
+  const stateUser = await prisma.user.findUnique({ where: { id: state }, select: { id: true } })
+  if (!stateUser) {
+    return NextResponse.redirect(
+      `${process.env.NEXTAUTH_URL}/profile?strava=error&reason=invalid_state`
+    )
+  }
+
   try {
     const tokens = await exchangeStravaCode(code)
     const stravaId = String(tokens.athlete.id)

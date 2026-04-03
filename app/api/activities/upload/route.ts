@@ -23,7 +23,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 })
   }
 
+  // Limite de taille : 20 Mo max
+  const MAX_FILE_SIZE = 20 * 1024 * 1024
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: 'Fichier trop volumineux (max 20 Mo)' }, { status: 400 })
+  }
+
   const fileName = file.name.toLowerCase()
+  if (!fileName.endsWith('.gpx') && !fileName.endsWith('.fit')) {
+    return NextResponse.json({ error: 'Format non supporté (GPX ou FIT uniquement)' }, { status: 400 })
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer())
 
   let parsed

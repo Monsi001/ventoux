@@ -9,8 +9,8 @@ export async function GET(req: Request) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
-  const limit = parseInt(searchParams.get('limit') || '50')
-  const offset = parseInt(searchParams.get('offset') || '0')
+  const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50') || 50, 1), 100)
+  const offset = Math.max(parseInt(searchParams.get('offset') || '0') || 0, 0)
   const type = searchParams.get('type')
 
   const activities = await prisma.activity.findMany({
