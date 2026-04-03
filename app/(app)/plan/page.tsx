@@ -1,12 +1,18 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { format, addDays, startOfWeek, differenceInDays } from 'date-fns'
+import { useState, useEffect } from 'react'
+import { format, addDays, startOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Sparkles, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info, Mountain, X, Dumbbell, Bike, Check, Calendar, Play, Pause, SkipForward, RotateCcw, Trash2, Sun, Cloud, MapPin, Download, Train, Wind, Thermometer, MessageCircle, Send } from 'lucide-react'
-import type { TrainingPlan, TrainingWeek, TrainingSession, Race, UserProfile, Activity } from '@/types'
-import { formatMinutes, calculatePMC } from '@/lib/training'
+import { Sparkles, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info, Mountain, X, Dumbbell, Bike, Check, Calendar, Trash2, Sun, MapPin, Download, Train, Wind, Thermometer } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import type { TrainingPlan, TrainingWeek, TrainingSession, Race, Activity } from '@/types'
+import { calculatePMC } from '@/lib/training'
 import { GlossaryButton, Term } from '@/components/ui/Tooltip'
 import { cachedFetch, invalidateCache } from '@/lib/fetch-cache'
+import SessionCard from './components/SessionCard'
+
+const CoachChat = dynamic(() => import('./components/CoachChat'), { ssr: false })
+const StrengthPanelDynamic = dynamic(() => import('./components/StrengthPanel'), { ssr: false })
+const VolumeChart = dynamic(() => import('./components/VolumeChart'), { ssr: false })
 
 const ZONE_COLORS: Record<number, string> = {
   1: '#6B9EFF', 2: '#4ECCA3', 3: '#F7C948', 4: '#FF9F45',
@@ -81,54 +87,9 @@ export default function PlanPage() {
   const [loadingRide, setLoadingRide] = useState(false)
   const [planStartDate, setPlanStartDate] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [includeStrength, setIncludeStrength] = useState(true)
-  const [chatOpen, setChatOpen] = useState(false)
-  const [chatMsg, setChatMsg] = useState('')
-  const [chatLoading, setChatLoading] = useState(false)
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'coach'; text: string }[]>([])
-
-  async function sendCoachMessage() {
-    if (!chatMsg.trim() || !plan) return
-    const msg = chatMsg.trim()
-    setChatMsg('')
-    setChatHistory(h => [...h, { role: 'user', text: msg }])
-    setChatLoading(true)
-
-    try {
-      const res = await fetch('/api/plan/coach', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: plan.id, message: msg }),
-      })
-      const data = await res.json()
-      if (res.ok && data.weeks) {
-        setPlan({ ...plan, weeks: data.weeks })
-        setChatHistory(h => [...h, { role: 'coach', text: data.reply }])
-        invalidateCache('/api/init')
-      } else {
-        setChatHistory(h => [...h, { role: 'coach', text: data.error || 'Erreur, réessaie.' }])
-      }
-    } catch {
-      setChatHistory(h => [...h, { role: 'coach', text: 'Erreur réseau.' }])
-    } finally {
-      setChatLoading(false)
-    }
-  }
-
   useEffect(() => {
     loadData()
   }, [])
-
-  // Fermer les panels avec Escape
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        if (chatOpen) { setChatOpen(false); return }
-        if (selectedSession) { setSelectedSession(null); return }
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [chatOpen, selectedSession])
 
   async function loadData() {
     setLoading(true)
@@ -633,14 +594,14 @@ export default function PlanPage() {
                   {actualWeekHours > 0 ? `${actualWeekHours}` : '—'}
                   <span className="text-stone-600 text-xs font-normal"> / {weekTotalHours}h</span>
                 </p>
-                <p className="text-stone-600 text-xs uppercase tracking-widest">Volume</p>
+                <p className="text-stone-600 text-[10px] uppercase tracking-widest">Volume</p>
               </div>
               <div>
                 <p className="font-display text-lg font-bold text-summit-light">
                   {actualWeekTss > 0 ? actualWeekTss : '—'}
                   <span className="text-stone-600 text-xs font-normal"> / {weekTotalTss}</span>
                 </p>
-                <p className="text-stone-600 text-xs uppercase tracking-widest"><Term term="TSS">TSS</Term></p>
+                <p className="text-stone-600 text-[10px] uppercase tracking-widest"><Term term="TSS">TSS</Term></p>
               </div>
             </div>
             <GlossaryButton />
@@ -744,7 +705,7 @@ export default function PlanPage() {
                 const isActive = currentPhase?.type === phase.type && currentPhase?.startWeek === phase.startWeek
                 return (
                   <div key={`label-${phase.type}-${phase.startWeek}`} style={{ width: `${widthPct}%` }} className="text-center">
-                    <span className={`text-xs ${isActive ? 'text-stone-300 font-medium' : 'text-stone-600'}`}>
+                    <span className={`text-[10px] ${isActive ? 'text-stone-300 font-medium' : 'text-stone-600'}`}>
                       {phase.name}
                     </span>
                   </div>
@@ -765,7 +726,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.ctl > 60 ? 'text-green-400' : latestPmc.ctl > 30 ? 'text-amber-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.ctl)}
             </p>
-            <p className="text-stone-600 text-xs uppercase tracking-widest mt-0.5">
+            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
               <Term term="CTL">CTL</Term> · Fitness
             </p>
           </div>
@@ -773,7 +734,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.atl > latestPmc.ctl * 1.3 ? 'text-red-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.atl)}
             </p>
-            <p className="text-stone-600 text-xs uppercase tracking-widest mt-0.5">
+            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
               <Term term="ATL">ATL</Term> · Fatigue
             </p>
           </div>
@@ -781,7 +742,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.tsb > 5 ? 'text-green-400' : latestPmc.tsb < -20 ? 'text-red-400' : 'text-amber-400'}`}>
               {latestPmc.tsb > 0 ? '+' : ''}{Math.round(latestPmc.tsb)}
             </p>
-            <p className="text-stone-600 text-xs uppercase tracking-widest mt-0.5">
+            <p className="text-stone-600 text-[10px] uppercase tracking-widest mt-0.5">
               <Term term="TSB">TSB</Term> · {latestPmc.tsb > 5 ? 'Reposé' : latestPmc.tsb < -20 ? 'Fatigué' : 'Forme'}
             </p>
           </div>
@@ -850,7 +811,7 @@ export default function PlanPage() {
                   {/* Day content */}
                   <div className="flex-1 p-1.5 space-y-1.5">
                     {dayActivity && (
-                      <div className="px-2 py-1 rounded-lg bg-green-500/10 text-xs text-green-400 flex items-center gap-1">
+                      <div className="px-2 py-1 rounded-lg bg-green-500/10 text-[10px] text-green-400 flex items-center gap-1">
                         <Check size={8} />
                         <span className="truncate">{dayActivity.name}</span>
                       </div>
@@ -899,7 +860,7 @@ export default function PlanPage() {
                     <span className={`text-sm font-medium ${isToday ? 'text-ventoux-400' : 'text-stone-500'}`}>
                       {DAYS_FR_LONG[i]}
                     </span>
-                    {isToday && <span className="text-xs text-ventoux-500 bg-ventoux-500/10 px-2 py-0.5 rounded-full">Aujourd'hui</span>}
+                    {isToday && <span className="text-[10px] text-ventoux-500 bg-ventoux-500/10 px-2 py-0.5 rounded-full">Aujourd'hui</span>}
                   </div>
 
                   {/* Sessions */}
@@ -942,197 +903,15 @@ export default function PlanPage() {
       )}
 
       {/* ─── Historique & volume ─────────────────────────────────────────────── */}
-      {plan!.weeks && plan!.weeks.length > 1 && (() => {
-        const today = new Date()
-        const weeksData = plan!.weeks.map((week: TrainingWeek, i: number) => {
-          const weekStart = new Date(week.weekStart)
-          const weekEnd = addDays(weekStart, 6)
-          const isPast = weekEnd < today
-          const isCurrent = today >= weekStart && today <= weekEnd
-
-          // Planned
-          const plannedMin = week.sessions?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0
-          const plannedHrs = Math.round(plannedMin / 60 * 10) / 10
-          const plannedTss = week.sessions?.reduce((sum, s) => sum + (s.tssTarget || 0), 0) || 0
-
-          // Actual: activités de cette semaine (duration en secondes)
-          const weekActivities = activities.filter(a => {
-            const d = new Date(a.date)
-            return d >= weekStart && d <= weekEnd
-          })
-          const actualHrs = Math.round(weekActivities.reduce((sum, a) => sum + (a.duration || 0), 0) / 3600 * 10) / 10
-          const actualTss = weekActivities.reduce((sum, a) => sum + (a.tss || 0), 0)
-
-          // Completion
-          const totalSessions = week.sessions?.length || 0
-          const doneSessions = week.sessions?.filter(s => s.completed).length || 0
-          const completionPct = totalSessions > 0 ? Math.round(doneSessions / totalSessions * 100) : 0
-
-          return { week, i, isPast, isCurrent, plannedHrs, plannedTss, actualHrs, actualTss, doneSessions, totalSessions, completionPct, weekActivities }
-        })
-
-        const maxHrs = Math.max(...weeksData.map(w => Math.max(w.plannedHrs, w.actualHrs)), 1)
-
-        // Monthly aggregation — basé sur toutes les activités, pas seulement les semaines du plan
-        const months = new Map<string, { plannedHrs: number, actualHrs: number, plannedTss: number, actualTss: number, done: number, total: number }>()
-
-        // Planned: depuis les semaines du plan
-        weeksData.forEach(w => {
-          const monthKey = format(new Date(w.week.weekStart), 'yyyy-MM')
-          if (!months.has(monthKey)) months.set(monthKey, { plannedHrs: 0, actualHrs: 0, plannedTss: 0, actualTss: 0, done: 0, total: 0 })
-          const m = months.get(monthKey)!
-          m.plannedHrs += w.plannedHrs
-          m.plannedTss += w.plannedTss
-          m.done += w.doneSessions
-          m.total += w.totalSessions
-        })
-
-        // Actual: depuis toutes les activités réelles du mois
-        activities.forEach(a => {
-          const monthKey = format(new Date(a.date), 'yyyy-MM')
-          if (!months.has(monthKey)) months.set(monthKey, { plannedHrs: 0, actualHrs: 0, plannedTss: 0, actualTss: 0, done: 0, total: 0 })
-          const m = months.get(monthKey)!
-          m.actualHrs += a.duration / 3600
-          m.actualTss += a.tss || 0
-        })
-
-        // Arrondir les heures réelles
-        months.forEach(m => { m.actualHrs = Math.round(m.actualHrs * 10) / 10 })
-
-        return (
-          <div className="mt-8 space-y-6">
-            {/* Weekly volume chart */}
-            <div>
-              <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Volume hebdomadaire</h2>
-              <div aria-label="Historique des volumes d'entraînement" className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 items-end" style={{ minHeight: 140 }}>
-                {weeksData.map(({ week, i, isPast, isCurrent, plannedHrs, plannedTss, actualHrs, actualTss, completionPct, doneSessions, totalSessions }) => {
-                  const isSelected = i === currentWeekIdx
-                  const barH = Math.max(8, (plannedHrs / maxHrs) * 100)
-                  const actualH = Math.max(0, (actualHrs / maxHrs) * 100)
-                  const hasActual = isPast || isCurrent
-
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentWeekIdx(i)}
-                      className={`group/bar relative flex-shrink-0 w-14 md:flex-1 md:w-auto flex flex-col items-center gap-1 transition-all rounded-lg py-1.5 px-0.5 ${
-                        isSelected
-                          ? 'bg-ventoux-500/15 ring-1 ring-ventoux-500/30'
-                          : 'hover:bg-white/[0.03]'
-                      }`}
-                    >
-                      {/* Hover tooltip */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:block z-50 pointer-events-none">
-                        <div className="bg-[#141312] border border-white/10 rounded-lg px-3 py-2 text-left whitespace-nowrap shadow-lg">
-                          <p className="text-[11px] font-medium text-summit-light">S{week.weekNumber}</p>
-                          <p className="text-[10px] text-stone-400">Prévu : {plannedHrs}h · {Math.round(plannedTss)} TSS</p>
-                          {hasActual && <p className="text-[10px] text-stone-400">Réalisé : {actualHrs}h · {Math.round(actualTss)} TSS</p>}
-                          {hasActual && totalSessions > 0 && <p className="text-[10px] text-stone-400">Séances : {doneSessions}/{totalSessions}</p>}
-                        </div>
-                      </div>
-                      {/* Bars */}
-                      <div className="relative w-full flex justify-center items-end gap-[2px]" style={{ height: 80 }}>
-                        {/* Planned bar */}
-                        <div
-                          className={`w-3 rounded-t transition-all ${isPast ? 'bg-stone-800' : isCurrent ? 'bg-ventoux-500/30' : 'bg-stone-800/60'}`}
-                          style={{ height: `${barH}%` }}
-                        />
-                        {/* Actual bar */}
-                        {hasActual && (
-                          <div
-                            className={`w-3 rounded-t transition-all ${
-                              actualH >= barH * 0.8 ? 'bg-green-500' : actualH > 0 ? 'bg-amber-500' : 'bg-red-500/40'
-                            }`}
-                            style={{ height: `${Math.max(actualH > 0 ? 4 : 0, actualH)}%` }}
-                          />
-                        )}
-                      </div>
-
-                      {/* Completion badge */}
-                      {hasActual && totalSessions > 0 && (
-                        <div className={`text-xs font-medium px-1 rounded ${
-                          completionPct >= 80 ? 'text-green-400' : completionPct > 0 ? 'text-amber-400' : 'text-stone-600'
-                        }`}>
-                          {doneSessions}/{totalSessions}
-                        </div>
-                      )}
-
-                      {/* Labels */}
-                      <p className={`text-xs font-mono font-bold ${isSelected ? 'text-ventoux-400' : isCurrent ? 'text-summit-light' : 'text-stone-600'}`}>
-                        S{week.weekNumber}
-                      </p>
-                      <p className={`text-xs ${isSelected ? 'text-stone-400' : 'text-stone-700'}`}>{plannedHrs}h</p>
-                      <p className={`text-[8px] font-mono ${hasActual && actualTss > 0 ? (actualTss >= plannedTss * 0.8 ? 'text-green-500/70' : 'text-amber-500/70') : 'text-stone-700'}`}>
-                        {hasActual && actualTss > 0 ? `${Math.round(actualTss)}` : plannedTss > 0 ? `${Math.round(plannedTss)}` : ''}{(hasActual && actualTss > 0) || plannedTss > 0 ? ' TSS' : ''}
-                      </p>
-                      {week.phase && (
-                        <div className={`text-[7px] px-1 py-0.5 rounded leading-none ${PHASE_COLORS[week.phase] || ''}`}>
-                          {week.phase}
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-              {/* Legend */}
-              <div className="flex items-center gap-4 mt-2 text-xs text-stone-600">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-stone-800 inline-block" /> Prévu</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500 inline-block" /> Réalisé</span>
-              </div>
-            </div>
-
-            {/* Monthly summary */}
-            {months.size > 1 && (
-              <div>
-                <h2 className="text-xs uppercase text-stone-600 tracking-widest mb-3">Bilan mensuel</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {Array.from(months.entries()).map(([key, m]) => {
-                    const label = format(new Date(key + '-01'), 'MMM yyyy', { locale: fr })
-                    const pct = m.total > 0 ? Math.round(m.done / m.total * 100) : 0
-                    return (
-                      <div key={key} className="bg-white/[0.02] rounded-xl p-3 space-y-2">
-                        <p className="text-xs font-medium text-stone-400 capitalize">{label}</p>
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-display text-lg font-bold text-summit-light">{Math.round(m.actualHrs * 10) / 10}h</span>
-                          <span className="text-xs text-stone-600">/ {Math.round(m.plannedHrs * 10) / 10}h</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-xs text-summit-light font-medium">{Math.round(m.actualTss)} <span className="text-stone-600">TSS</span></span>
-                          <span className="text-xs text-stone-600">/ {Math.round(m.plannedTss)}</span>
-                        </div>
-                        {m.total > 0 && (
-                          <div>
-                            <div className="flex justify-between text-xs mb-1">
-                              <span className="text-stone-600">Complétion</span>
-                              <span className={pct >= 80 ? 'text-green-400' : pct > 0 ? 'text-amber-400' : 'text-stone-600'}>{pct}%</span>
-                            </div>
-                            <div className="h-1 rounded-full bg-white/[0.05] overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all ${pct >= 80 ? 'bg-green-500' : pct > 0 ? 'bg-amber-500' : 'bg-stone-700'}`}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })()}
+      <VolumeChart plan={plan!} activities={activities} currentWeekIdx={currentWeekIdx} onWeekSelect={setCurrentWeekIdx} />
 
       {/* ─── Session detail slide-over ─────────────────────────────────────────── */}
       {selectedSession && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedSession(null)} onKeyDown={e => { if (e.key === 'Escape') setSelectedSession(null) }}>
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedSession(null)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Détail de la séance"
-            className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-md bg-stone-950 border-l border-white/[0.06] h-full overflow-y-auto shadow-2xl animate-slide-in-right"
+            className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-md bg-stone-950 border-l border-white/[0.06] h-full overflow-y-auto shadow-2xl animate-in"
+            style={{ animation: 'slideInRight 0.3s ease-out' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Session header */}
@@ -1147,7 +926,7 @@ export default function PlanPage() {
                     {DAYS_FR_LONG[DAY_KEYS.indexOf(selectedSession.day)]} · {selectedSession.duration}min
                   </p>
                 </div>
-                <button onClick={() => setSelectedSession(null)} aria-label="Fermer" className="p-2 rounded-lg text-stone-500 hover:text-summit-light hover:bg-white/[0.05]">
+                <button onClick={() => setSelectedSession(null)} className="p-2 rounded-lg text-stone-500 hover:text-summit-light hover:bg-white/[0.05]">
                   <X size={18} />
                 </button>
               </div>
@@ -1158,17 +937,17 @@ export default function PlanPage() {
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold text-summit-light">{selectedSession.duration}<span className="text-xs text-stone-500">min</span></p>
-                  <p className="text-xs text-stone-600 uppercase">Durée</p>
+                  <p className="text-[10px] text-stone-600 uppercase">Durée</p>
                 </div>
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold text-summit-light">{selectedSession.tssTarget || '—'}</p>
-                  <p className="text-xs text-stone-600 uppercase"><Term term="TSS">TSS</Term></p>
+                  <p className="text-[10px] text-stone-600 uppercase"><Term term="TSS">TSS</Term></p>
                 </div>
                 <div className="bg-white/[0.03] rounded-xl p-3 text-center">
                   <p className="text-xl font-display font-bold" style={{ color: ZONE_COLORS[selectedSession.intensityZone] || '#888' }}>
                     Z{selectedSession.intensityZone}
                   </p>
-                  <p className="text-xs text-stone-600 uppercase">Zone</p>
+                  <p className="text-[10px] text-stone-600 uppercase">Zone</p>
                 </div>
               </div>
 
@@ -1254,7 +1033,7 @@ export default function PlanPage() {
 
                         {mywhooshWorkout.steps?.length > 0 && (
                           <div>
-                            <p className="text-xs uppercase text-stone-600 mb-1.5">Structure</p>
+                            <p className="text-[10px] uppercase text-stone-600 mb-1.5">Structure</p>
                             <div className="flex gap-[1px] h-8 rounded-lg overflow-hidden">
                               {mywhooshWorkout.steps.slice(0, 30).map((step: any, i: number) => {
                                 const power = step.Power || 0
@@ -1277,7 +1056,7 @@ export default function PlanPage() {
                           </div>
                         )}
 
-                        <p className="text-xs text-cyan-500/40">
+                        <p className="text-[10px] text-cyan-500/40">
                           Cherchez "{selectedSession.mywhooshWorkoutName}" dans MyWhoosh
                         </p>
                       </div>
@@ -1331,10 +1110,10 @@ export default function PlanPage() {
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                {isBest && <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-medium">Recommandé</span>}
+                                {isBest && <span className="text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-medium">Recommandé</span>}
                                 <h5 className="text-sm font-medium text-summit-light truncate">{suggestion.sector.name}</h5>
                               </div>
-                              <p className="text-xs text-stone-500 mt-0.5">{suggestion.route.name}</p>
+                              <p className="text-[11px] text-stone-500 mt-0.5">{suggestion.route.name}</p>
                             </div>
                             <div className={`text-center px-2 py-1 rounded-lg ${scoreBg} flex-shrink-0`}>
                               <p className={`text-sm font-bold ${scoreColor}`}>{suggestion.weather.score}</p>
@@ -1343,14 +1122,14 @@ export default function PlanPage() {
                           </div>
 
                           {/* Route info */}
-                          <div className="flex items-center gap-3 text-xs text-stone-500 mb-2">
+                          <div className="flex items-center gap-3 text-[11px] text-stone-500 mb-2">
                             <span>{suggestion.route.distance}km</span>
                             <span>{suggestion.route.elevation}m D+</span>
                             <span>~{Math.round(suggestion.route.duration / 60)}h{suggestion.route.duration % 60 > 0 ? `${String(suggestion.route.duration % 60).padStart(2, '0')}` : ''}</span>
                           </div>
 
                           {/* Weather */}
-                          <div className="flex items-center gap-2 text-xs mb-2">
+                          <div className="flex items-center gap-2 text-[11px] mb-2">
                             <Thermometer size={10} className="text-stone-500" />
                             <span className="text-stone-400">{suggestion.weather.temp}°C</span>
                             <Wind size={10} className="text-stone-500" />
@@ -1362,13 +1141,13 @@ export default function PlanPage() {
                           {suggestion.weather.reasons.length > 0 && (
                             <div className="flex flex-wrap gap-1 mb-2">
                               {suggestion.weather.reasons.map((r: string, ri: number) => (
-                                <span key={ri} className="text-xs bg-white/[0.04] text-stone-500 px-1.5 py-0.5 rounded">{r}</span>
+                                <span key={ri} className="text-[9px] bg-white/[0.04] text-stone-500 px-1.5 py-0.5 rounded">{r}</span>
                               ))}
                             </div>
                           )}
 
                           {/* Train info */}
-                          <div className="flex items-center gap-1.5 text-xs text-stone-600 mb-2.5">
+                          <div className="flex items-center gap-1.5 text-[10px] text-stone-600 mb-2.5">
                             <Train size={10} />
                             <span>{suggestion.sector.nearestStation}</span>
                             {suggestion.sector.trainFromParis && <span className="text-stone-700">· {suggestion.sector.trainFromParis}</span>}
@@ -1390,12 +1169,12 @@ export default function PlanPage() {
 
               {/* Strength detail with timer */}
               {selectedSession.type === 'STRENGTH' && (
-                <StrengthPanel description={selectedSession.description} />
+                <StrengthPanelDynamic description={selectedSession.description} />
               )}
 
               {/* Move to another day */}
               <div>
-                <p className="text-xs uppercase text-stone-600 mb-2 tracking-wider">Déplacer</p>
+                <p className="text-[10px] uppercase text-stone-600 mb-2 tracking-wider">Déplacer</p>
                 <div className="grid grid-cols-7 gap-1">
                   {DAY_KEYS.map((dayKey, i) => {
                     const isCurrent = selectedSession.day === dayKey
@@ -1430,412 +1209,16 @@ export default function PlanPage() {
       )}
 
       {/* ─── Coach chat ──────────────────────────────────────────────────────── */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
-        {chatOpen && (
-          <div role="dialog" aria-modal="true" aria-label="Chat coach" onKeyDown={e => { if (e.key === 'Escape') setChatOpen(false) }} className="w-[340px] max-w-[calc(100vw-2rem)] bg-stone-950 border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-ventoux-gradient flex items-center justify-center">
-                  <Mountain className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-sm font-medium text-summit-light">Coach Ventoux</span>
-              </div>
-              <button onClick={() => setChatOpen(false)} aria-label="Fermer" className="text-stone-500 hover:text-stone-300 transition-colors p-2">
-                <X size={16} />
-              </button>
-            </div>
+      <CoachChat plan={plan!} onPlanUpdate={(weeks) => setPlan({ ...plan!, weeks })} />
 
-            <div className="h-[280px] overflow-y-auto p-4 space-y-3">
-              {chatHistory.length === 0 && (
-                <div className="text-center py-6">
-                  <p className="text-stone-500 text-sm mb-4">Comment tu te sens aujourd'hui ?</p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {['Je suis malade', 'Pas le temps', 'En pleine forme', "J'ai des courbatures"].map(q => (
-                      <button
-                        key={q}
-                        onClick={() => setChatMsg(q)}
-                        aria-label={`Réponse rapide : ${q}`}
-                        className="text-xs px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-stone-400 hover:text-ventoux-400 hover:border-ventoux-500/30 transition-all"
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {chatHistory.map((m: { role: string; text: string }, i: number) => (
-                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm ${
-                    m.role === 'user'
-                      ? 'bg-ventoux-500/20 text-ventoux-200 rounded-br-sm'
-                      : 'bg-white/[0.05] text-stone-300 rounded-bl-sm'
-                  }`}>
-                    {m.text}
-                  </div>
-                </div>
-              ))}
-              {chatLoading && (
-                <div className="flex justify-start">
-                  <div className="px-3 py-2 rounded-xl bg-white/[0.05] text-stone-500 text-sm">
-                    <Loader2 size={14} className="animate-spin inline mr-1.5" />
-                    Le coach réfléchit…
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <form
-              onSubmit={e => { e.preventDefault(); sendCoachMessage(); }}
-              className="flex items-center gap-2 px-3 py-3 border-t border-white/[0.06]"
-            >
-              <input
-                type="text"
-                value={chatMsg}
-                onChange={e => setChatMsg(e.target.value)}
-                placeholder="Dis quelque chose au coach…"
-                className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-summit-light placeholder:text-stone-600 focus:outline-none focus:border-ventoux-500/40"
-                disabled={chatLoading}
-              />
-              <button
-                type="submit"
-                disabled={chatLoading || !chatMsg.trim()}
-                className="p-2 rounded-xl bg-ventoux-gradient text-white disabled:opacity-30 transition-opacity"
-              >
-                <Send size={14} />
-              </button>
-            </form>
-          </div>
-        )}
-
-        <button
-          onClick={() => setChatOpen((o: boolean) => !o)}
-          aria-label={chatOpen ? 'Fermer le chat coach' : 'Ouvrir le chat coach'}
-          aria-expanded={chatOpen}
-          className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all ${
-            chatOpen
-              ? 'bg-stone-800 text-stone-400'
-              : 'bg-ventoux-gradient text-white shadow-ventoux hover:scale-105'
-          }`}
-        >
-          {chatOpen ? <X size={20} /> : <MessageCircle size={20} />}
-        </button>
-      </div>
-
+      {/* Slide-in animation */}
+      <style jsx>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+      `}</style>
     </div>
   )
 }
 
-// ─── Session Card ─────────────────────────────────────────────────────────────
-
-function SessionCard({ session, onClick, done, compact }: {
-  session: TrainingSession
-  onClick: () => void
-  done: boolean
-  compact: boolean
-}) {
-  const styles = TYPE_BG[session.type] || 'bg-stone-800/50 border-stone-700/30 text-stone-400'
-
-  if (compact) {
-    return (
-      <button
-        onClick={onClick}
-        className={`w-full text-left px-2 py-2 rounded-lg border text-xs leading-snug transition-all hover:brightness-125 cursor-pointer ${styles} ${done ? 'opacity-40' : ''}`}
-      >
-        <div className="flex items-center gap-1">
-          {done && <Check size={9} className="text-green-400" />}
-          <span className="font-semibold truncate">{TYPE_LABELS[session.type] || session.type}</span>
-        </div>
-        <div className="opacity-60 mt-0.5">{session.duration}min</div>
-        {session.indoor && session.mywhooshWorkoutName && (
-          <div className="mt-1 text-cyan-400/60 truncate flex items-center gap-0.5 text-xs">
-            <Bike size={7} />
-            <span className="truncate">{session.mywhooshWorkoutName}</span>
-          </div>
-        )}
-      </button>
-    )
-  }
-
-  // Full mobile card
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left px-4 py-3 rounded-xl border transition-all hover:brightness-110 cursor-pointer ${styles} ${done ? 'opacity-40' : ''}`}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-base">{TYPE_ICONS[session.type] || '🚴'}</span>
-          <div className="min-w-0">
-            <p className="font-semibold text-sm truncate">{session.name || TYPE_LABELS[session.type]}</p>
-            <div className="flex items-center gap-2 text-xs opacity-60 mt-0.5">
-              <span>{session.duration}min</span>
-              {session.tssTarget ? <span>TSS {session.tssTarget}</span> : null}
-              <span className="font-mono" style={{ color: ZONE_COLORS[session.intensityZone] || '#666' }}>Z{session.intensityZone}</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {session.indoor && <Bike size={12} className="text-cyan-400/50" />}
-          {done && <Check size={14} className="text-green-400" />}
-          <ChevronRight size={14} className="text-stone-600" />
-        </div>
-      </div>
-      {session.indoor && session.mywhooshWorkoutName && (
-        <p className="text-cyan-400/50 text-xs mt-1.5 truncate pl-7">{session.mywhooshWorkoutName}</p>
-      )}
-    </button>
-  )
-}
-
-// ─── Strength Panel with integrated timer ────────────────────────────────────
-
-interface ParsedExercise {
-  name: string
-  sets: number
-  reps: string
-  rest: number
-  isTime: boolean
-}
-
-function parseExercises(description: string): ParsedExercise[] {
-  if (!description) return []
-  const parts = description.split(/[,;]\s*/).map(s => s.trim()).filter(Boolean)
-  const exercises: ParsedExercise[] = []
-  let globalRest = 60
-
-  const restMatch = description.match(/\((\d+)s?\s*repos\)/i)
-  if (restMatch) globalRest = parseInt(restMatch[1])
-
-  for (const part of parts) {
-    if (/^\(\d+s?\s*repos\)$/i.test(part)) continue
-
-    const match = part.match(/^(.+?)\s+(\d+)\s*[xX×]\s*(\d+\s*[sS]?(?:\/[jJ])?)\s*(?:\(.*\))?$/)
-    if (match) {
-      const reps = match[3].trim()
-      const isTime = /s$/i.test(reps)
-      exercises.push({
-        name: match[1].trim(),
-        sets: parseInt(match[2]),
-        reps,
-        rest: globalRest,
-        isTime,
-      })
-    } else {
-      const cleaned = part.replace(/\(.*?\)/g, '').trim()
-      if (cleaned.length > 2) {
-        exercises.push({ name: cleaned, sets: 3, reps: '10', rest: globalRest, isTime: false })
-      }
-    }
-  }
-  return exercises
-}
-
-function StrengthPanel({ description }: { description: string }) {
-  const exercises = parseExercises(description)
-  const [currentExIdx, setCurrentExIdx] = useState(0)
-  const [currentSet, setCurrentSet] = useState(1)
-  const [phase, setPhase] = useState<'idle' | 'work' | 'rest'>('idle')
-  const [timeLeft, setTimeLeft] = useState(0)
-  const [isRunning, setIsRunning] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-
-  const currentEx = exercises[currentExIdx]
-  const totalExercises = exercises.length
-
-  const playBeep = useCallback(() => {
-    try {
-      if (!audioRef.current) {
-        audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGBAIjFYp+Pqt2BEMS91')
-      }
-      audioRef.current.currentTime = 0
-      audioRef.current.play().catch(() => {})
-    } catch {}
-  }, [])
-
-  useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(t => {
-          if (t <= 1) { playBeep(); return 0 }
-          if (t === 4) playBeep()
-          return t - 1
-        })
-      }, 1000)
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [isRunning, timeLeft, playBeep])
-
-  useEffect(() => {
-    if (timeLeft === 0 && isRunning) {
-      setIsRunning(false)
-      if (phase === 'work') {
-        if (currentEx) {
-          setPhase('rest')
-          setTimeLeft(currentEx.rest)
-          setIsRunning(true)
-        }
-      } else if (phase === 'rest') {
-        if (currentEx && currentSet < currentEx.sets) {
-          setCurrentSet(s => s + 1)
-          setPhase('work')
-          if (currentEx.isTime) {
-            setTimeLeft(parseInt(currentEx.reps))
-            setIsRunning(true)
-          }
-        } else if (currentExIdx < totalExercises - 1) {
-          setCurrentExIdx(i => i + 1)
-          setCurrentSet(1)
-          setPhase('work')
-          const nextEx = exercises[currentExIdx + 1]
-          if (nextEx?.isTime) {
-            setTimeLeft(parseInt(nextEx.reps))
-            setIsRunning(true)
-          }
-        } else {
-          setPhase('idle')
-        }
-      }
-    }
-  }, [timeLeft, isRunning, phase, currentEx, currentSet, currentExIdx, totalExercises, exercises])
-
-  const startWork = () => {
-    if (!currentEx) return
-    setPhase('work')
-    if (currentEx.isTime) {
-      setTimeLeft(parseInt(currentEx.reps))
-      setIsRunning(true)
-    }
-  }
-
-  const skipToNext = () => {
-    setIsRunning(false)
-    if (currentEx && currentSet < currentEx.sets) {
-      setCurrentSet(s => s + 1)
-      setPhase('idle')
-    } else if (currentExIdx < totalExercises - 1) {
-      setCurrentExIdx(i => i + 1)
-      setCurrentSet(1)
-      setPhase('idle')
-    }
-  }
-
-  const resetTimer = () => {
-    setIsRunning(false)
-    setCurrentExIdx(0)
-    setCurrentSet(1)
-    setPhase('idle')
-    setTimeLeft(0)
-  }
-
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`
-
-  if (exercises.length === 0) {
-    return (
-      <div className="rounded-xl bg-purple-500/5 border border-purple-500/15 p-4">
-        <p className="text-sm text-purple-300/70">{description}</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="rounded-xl bg-purple-500/5 border border-purple-500/15 overflow-hidden">
-      <div className="px-4 py-3 flex items-center justify-between border-b border-purple-500/10">
-        <div className="flex items-center gap-2">
-          <Dumbbell size={14} className="text-purple-400" />
-          <span className="text-sm font-semibold text-purple-300">Renforcement</span>
-        </div>
-        <button onClick={resetTimer} className="text-stone-600 hover:text-stone-400 transition-colors p-1">
-          <RotateCcw size={12} />
-        </button>
-      </div>
-
-      <div className="p-4 space-y-3">
-        {/* Exercise list */}
-        <div className="space-y-1">
-          {exercises.map((ex, i) => {
-            const isActive = i === currentExIdx
-            const isDone = i < currentExIdx
-            return (
-              <div
-                key={i}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
-                  isActive ? 'bg-purple-500/10 ring-1 ring-purple-500/20 text-purple-200' :
-                  isDone ? 'text-stone-600 line-through' : 'text-stone-500'
-                }`}
-              >
-                <span className="w-5 text-center text-xs">
-                  {isDone ? <Check size={12} className="text-green-500" /> : `${i + 1}`}
-                </span>
-                <span className="flex-1 font-medium">{ex.name}</span>
-                <span className="text-xs opacity-60">{ex.sets}×{ex.reps}</span>
-                {isActive && phase !== 'idle' && (
-                  <span className="text-xs text-purple-400">
-                    {currentSet}/{ex.sets}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Timer */}
-        {currentEx && (
-          <div className="border-t border-purple-500/10 pt-4">
-            <div className="text-center mb-3">
-              <p className="font-semibold text-purple-200">{currentEx.name}</p>
-              <p className="text-xs text-stone-500 mt-0.5">
-                Set {currentSet}/{currentEx.sets} · {currentEx.reps} {currentEx.isTime ? '' : 'reps'}
-              </p>
-            </div>
-
-            {((phase === 'work' && currentEx.isTime) || phase === 'rest') && (
-              <div className="text-center mb-4">
-                <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full border-2 ${
-                  phase === 'rest' ? 'border-green-500/30 text-green-300' : 'border-purple-500/30 text-purple-200'
-                }`}>
-                  <div>
-                    <div className="text-3xl font-mono font-bold">{formatTime(timeLeft)}</div>
-                    <div className="text-xs uppercase opacity-50">{phase === 'rest' ? 'Repos' : 'Go'}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              {phase === 'idle' && (
-                <button onClick={startWork} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-purple-500/20 text-purple-300 text-sm font-medium hover:bg-purple-500/30 transition-colors">
-                  <Play size={14} /> Go
-                </button>
-              )}
-              {phase !== 'idle' && currentEx.isTime && (
-                <button onClick={() => setIsRunning(!isRunning)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.05] text-stone-300 text-sm hover:bg-white/[0.08] transition-colors">
-                  {isRunning ? <Pause size={14} /> : <Play size={14} />}
-                  {isRunning ? 'Pause' : 'Reprendre'}
-                </button>
-              )}
-              {phase === 'work' && !currentEx.isTime && (
-                <button
-                  onClick={() => { setPhase('rest'); setTimeLeft(currentEx.rest); setIsRunning(true) }}
-                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-green-500/15 text-green-300 text-sm font-medium hover:bg-green-500/25 transition-colors"
-                >
-                  <Check size={14} /> Fait — Repos {currentEx.rest}s
-                </button>
-              )}
-              {phase === 'rest' && (
-                <button onClick={() => { setIsRunning(false); setTimeLeft(0) }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.05] text-stone-300 text-sm hover:bg-white/[0.08] transition-colors">
-                  <SkipForward size={14} /> Skip
-                </button>
-              )}
-              {(currentExIdx < totalExercises - 1 || currentSet < (currentEx?.sets || 0)) && (
-                <button onClick={skipToNext} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.03] text-stone-500 text-sm hover:bg-white/[0.06] hover:text-stone-300 transition-colors">
-                  <SkipForward size={14} /> Suivant
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
