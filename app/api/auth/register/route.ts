@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { sendVerificationEmail, generateToken } from '@/lib/email'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: Request) {
+  const ip = req.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`register:${ip}`, 5, 60_000)
+  if (!success) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 })
+
   try {
     const { name, email, password, height, weight, ftp } = await req.json()
 
