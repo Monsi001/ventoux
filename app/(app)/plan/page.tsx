@@ -718,7 +718,7 @@ export default function PlanPage() {
         const progressPct = Math.min(100, Math.max(0, ((currentWeekNum - 0.5) / totalPlanWeeks) * 100))
 
         return (
-          <div className="mb-6">
+          <div className="mb-8">
             <div className="relative">
               <div className="flex h-2 rounded-full overflow-hidden bg-white/[0.03]">
                 {plan!.phases.map((phase: any) => {
@@ -766,8 +766,9 @@ export default function PlanPage() {
       })()}
 
       {/* Training Load (CTL / ATL / TSB) */}
+      <div className="border-t border-white/[0.04]" />
       {latestPmc && (
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-8 mt-8">
           <div className="bg-white/[0.02] rounded-xl p-3 text-center">
             <p className={`font-display text-2xl font-bold ${latestPmc.ctl > 60 ? 'text-green-400' : latestPmc.ctl > 30 ? 'text-amber-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.ctl)}
@@ -797,7 +798,7 @@ export default function PlanPage() {
 
       {/* AI Notes */}
       {plan!.aiNotes && (
-        <div className="flex items-start gap-2.5 mb-6 text-sm text-stone-400 leading-relaxed">
+        <div className="flex items-start gap-2.5 mb-8 text-sm text-stone-400 leading-relaxed">
           <Sparkles size={14} className="text-ventoux-400 mt-1 flex-shrink-0" />
           <p>{plan!.aiNotes}</p>
         </div>
@@ -834,6 +835,7 @@ export default function PlanPage() {
       )}
 
       {/* ─── Sessions calendar ─────────────────────────────────────────────────── */}
+      <div className="border-t border-white/[0.04] mb-8" />
       {currentWeek && (
         <>
           {/* Desktop: 7 columns */}
@@ -949,6 +951,7 @@ export default function PlanPage() {
       )}
 
       {/* ─── Historique & volume ─────────────────────────────────────────────── */}
+      <div className="border-t border-white/[0.04] mt-8 mb-8" />
       <VolumeChart plan={plan!} activities={activities} currentWeekIdx={currentWeekIdx} onWeekSelect={setCurrentWeekIdx} />
 
       {/* ─── Session detail slide-over ─────────────────────────────────────────── */}
