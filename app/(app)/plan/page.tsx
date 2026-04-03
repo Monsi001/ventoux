@@ -582,7 +582,12 @@ export default function PlanPage() {
       <h2 className="font-display text-xl font-semibold text-summit-light uppercase">
         Claude analyse votre profil…
       </h2>
-      <p className="text-stone-500 mt-2">Génération du plan en cours</p>
+      <p className="text-stone-500 mt-2 animate-pulse">Génération du plan en cours...</p>
+      <div className="mt-4 flex gap-1">
+        <div className="w-2 h-2 rounded-full bg-ventoux-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+        <div className="w-2 h-2 rounded-full bg-ventoux-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+        <div className="w-2 h-2 rounded-full bg-ventoux-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+      </div>
     </div>
   )
 

@@ -85,11 +85,12 @@ export default function NavBar({ user }: { user: { name: string; email: string }
       </div>
 
       {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-white/[0.06] bg-stone-950/95 backdrop-blur-xl">
-          <div className="container mx-auto px-4 py-3 space-y-1">
+      <div className={`md:hidden border-t border-white/[0.06] bg-stone-950/95 backdrop-blur-xl overflow-hidden transition-all duration-200 ease-in-out ${
+        mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <div className="container mx-auto px-4 py-3 space-y-1">
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-              const active = pathname === href
+              const active = pathname === href || pathname.startsWith(href + '/')
               return (
                 <Link
                   key={href}
@@ -118,7 +119,7 @@ export default function NavBar({ user }: { user: { name: string; email: string }
             </div>
           </div>
         </div>
-      )}
+      </div>
     </nav>
   )
 }
