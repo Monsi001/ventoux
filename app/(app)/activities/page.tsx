@@ -261,6 +261,16 @@ function ActivityRow({ activity, onTssUpdate, onDelete }: { activity: ActivityTy
           {format(new Date(activity.date), "EEEE d MMMM yyyy 'à' HH'h'mm", { locale: fr })}
           {' · '}{TYPE_LABELS[activity.type]}
         </p>
+        {/* Mobile: durée + TSS compact */}
+        <div className="flex items-center gap-3 mt-1 sm:hidden text-xs text-stone-400">
+          <span className="font-mono">{formatDuration(activity.duration)}</span>
+          {activity.tss ? (
+            <span className="font-mono text-ventoux-400 font-semibold">{Math.round(activity.tss)} TSS</span>
+          ) : null}
+          {activity.distance ? (
+            <span className="font-mono">{activity.distance.toFixed(1)} km</span>
+          ) : null}
+        </div>
       </div>
 
       <div className="hidden sm:flex items-center gap-6 text-sm text-stone-400 flex-shrink-0">

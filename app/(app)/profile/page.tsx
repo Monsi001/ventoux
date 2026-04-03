@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { format, startOfWeek, addWeeks } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { User, Zap, Link2, Calendar, Check, Loader2, RefreshCw, Mountain } from 'lucide-react'
+import { User, Zap, Link2, Calendar, Check, Loader2, RefreshCw, Mountain, AlertTriangle } from 'lucide-react'
 import { estimateVentouxTime, formatMinutes, POWER_ZONES, getPowerZoneBounds } from '@/lib/training'
 import type { UserProfile, WeeklyConstraint } from '@/types'
 import { invalidateCache } from '@/lib/fetch-cache'
@@ -19,6 +19,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState({ name: '', height: '', weight: '', ftp: '' })
+
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false)
 
   // Contraintes
   const [constraints, setConstraints] = useState<WeeklyConstraint[]>([])
@@ -253,11 +255,7 @@ export default function ProfilePage() {
                 <RefreshCw size={12} /> Sync
               </button>
               <button
-                onClick={async () => {
-                  if (!confirm('Déconnecter votre compte Strava ?')) return
-                  const res = await fetch('/api/strava/disconnect', { method: 'POST' })
-                  if (res.ok) loadProfile()
-                }}
+                onClick={() => setShowDisconnectModal(true)}
                 className="text-xs text-stone-500 hover:text-red-400 transition-colors py-1.5 px-2"
               >
                 Déconnecter
@@ -323,6 +321,43 @@ export default function ProfilePage() {
           <Check size={14} /> Enregistrer les disponibilités
         </button>
       </div>
+
+      {/* Modal déconnexion Strava */}
+      {showDisconnectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="card p-6 max-w-sm w-full mx-4 shadow-2xl animate-in">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-red-400" />
+              </div>
+              <h3 className="font-display text-base font-semibold text-summit-light uppercase tracking-wide">
+                Déconnecter Strava
+              </h3>
+            </div>
+            <p className="text-stone-400 text-sm mb-6">
+              Voulez-vous vraiment déconnecter votre compte Strava ? Vos activités importées seront conservées.
+            </p>
+            <div className="flex items-center gap-3 justify-end">
+              <button
+                onClick={() => setShowDisconnectModal(false)}
+                className="btn-secondary text-sm px-4 py-2"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={async () => {
+                  const res = await fetch('/api/strava/disconnect', { method: 'POST' })
+                  if (res.ok) loadProfile()
+                  setShowDisconnectModal(false)
+                }}
+                className="bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
