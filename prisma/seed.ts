@@ -7,7 +7,8 @@ async function main() {
   console.log('🌱 Seeding database...')
 
   // Créer un utilisateur de démo
-  const password = await bcrypt.hash('ventoux2026', 12)
+  const demoPwd = process.env.DEMO_PASSWORD || 'ventoux2026'
+  const password = await bcrypt.hash(demoPwd, 12)
 
   const user = await prisma.user.upsert({
     where: { email: 'demo@ventoux.app' },
@@ -41,7 +42,7 @@ async function main() {
     },
   })
 
-  console.log(`✅ User: ${user.email} (pwd: ventoux2026)`)
+  console.log(`✅ User: ${user.email}`)
   console.log(`✅ Race: GF Mont Ventoux 2026`)
 }
 
