@@ -417,15 +417,47 @@ export default function PlanPage() {
     } catch (e) {}
   }
 
-  function openSessionDetail(session: TrainingSession) {
+  async function openSessionDetail(session: TrainingSession) {
     setSelectedSession(session)
     setMywhooshWorkout(null)
     setRideSuggestions(null)
+
+    const isCycling = session.type !== 'STRENGTH' && session.type !== 'REST'
+
     if (session.mywhooshWorkoutId) {
+      // Load existing MyWhoosh workout detail
       loadWorkoutDetail(session.mywhooshWorkoutId)
+    } else if (isCycling) {
+      // Auto-match a MyWhoosh workout for cycling sessions without one
+      try {
+        const res = await fetch(`/api/workouts?sessionType=${session.type}&duration=${session.duration}&tss=${session.tssTarget || ''}&limit=1`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.suggestions?.length > 0) {
+            const match = data.suggestions[0]
+            const updated = { ...session, mywhooshWorkoutId: match.id, mywhooshWorkoutName: match.name, indoor: session.indoor ?? true }
+            setSelectedSession(updated)
+            loadWorkoutDetail(match.id)
+            // Persist in plan
+            if (plan) {
+              const updatedWeeks = plan.weeks.map((week, idx) => {
+                if (idx !== currentWeekIdx) return week
+                return { ...week, sessions: week.sessions.map(s => s.id === session.id ? updated : s) }
+              })
+              setPlan({ ...plan, weeks: updatedWeeks })
+              fetch('/api/plan/update-session', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId: session.id, updates: { indoor: updated.indoor, mywhooshWorkoutId: match.id, mywhooshWorkoutName: match.name } }),
+              }).catch(() => {})
+            }
+          }
+        }
+      } catch {}
     }
+
     // Load ride suggestions for outdoor cycling sessions
-    if (!session.indoor && session.type !== 'STRENGTH' && session.type !== 'REST') {
+    if (!session.indoor && isCycling) {
       loadRideSuggestions(session)
     }
   }
