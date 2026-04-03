@@ -50,6 +50,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="bg-stone-950 text-summit-light font-body antialiased">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-ventoux-500 focus:text-white focus:rounded-lg">
+          Aller au contenu principal
+        </a>
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

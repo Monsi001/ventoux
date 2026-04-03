@@ -118,29 +118,29 @@ export default function RacesPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="label">Nom de la course *</label>
-              <input className="input" placeholder="GF du Mont Ventoux" value={form.name}
+              <label htmlFor="race-name" className="label">Nom de la course *</label>
+              <input id="race-name" className="input" placeholder="GF du Mont Ventoux" value={form.name}
                 onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             </div>
             <div>
-              <label className="label">Date *</label>
-              <input type="date" className="input" value={form.date}
+              <label htmlFor="race-date" className="label">Date *</label>
+              <input id="race-date" type="date" className="input" value={form.date}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
             </div>
             <div>
-              <label className="label">Lieu</label>
-              <input className="input" placeholder="Bédoin, Vaucluse" value={form.location}
+              <label htmlFor="race-location" className="label">Lieu</label>
+              <input id="race-location" className="input" placeholder="Bédoin, Vaucluse" value={form.location}
                 onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
             </div>
             <div>
-              <label className="label">Distance (km) *</label>
-              <input type="number" className="input" placeholder="173" value={form.distance}
+              <label htmlFor="race-distance" className="label">Distance (km) *</label>
+              <input id="race-distance" type="number" className="input" placeholder="173" value={form.distance}
                 onChange={e => setForm(p => ({ ...p, distance: e.target.value }))} />
             </div>
             <div>
-              <label className="label">Dénivelé positif (m) *</label>
-              <input type="number" className="input" placeholder="3660" value={form.elevation}
+              <label htmlFor="race-elevation" className="label">Dénivelé positif (m) *</label>
+              <input id="race-elevation" type="number" className="input" placeholder="3660" value={form.elevation}
                 onChange={e => setForm(p => ({ ...p, elevation: e.target.value }))} />
             </div>
             <div className="col-span-2">
@@ -163,8 +163,8 @@ export default function RacesPage() {
               </div>
             </div>
             <div className="col-span-2">
-              <label className="label">Notes</label>
-              <textarea className="input h-20 resize-none" placeholder="Informations complémentaires…"
+              <label htmlFor="race-notes" className="label">Notes</label>
+              <textarea id="race-notes" className="input h-20 resize-none" placeholder="Informations complémentaires…"
                 value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
             </div>
           </div>

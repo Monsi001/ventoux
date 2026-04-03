@@ -87,6 +87,47 @@ export default function PlanPage() {
   const [loadingRide, setLoadingRide] = useState(false)
   const [planStartDate, setPlanStartDate] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [includeStrength, setIncludeStrength] = useState(true)
+  const slideOverRef = useRef<HTMLDivElement>(null)
+
+  // Focus trap for session detail slide-over
+  useEffect(() => {
+    if (!selectedSession || !slideOverRef.current) return
+
+    const panel = slideOverRef.current
+    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const focusables = panel.querySelectorAll<HTMLElement>(focusableSelector)
+    if (focusables.length > 0) focusables[0].focus()
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setSelectedSession(null)
+        return
+      }
+      if (e.key !== 'Tab') return
+
+      const currentFocusables = panel.querySelectorAll<HTMLElement>(focusableSelector)
+      if (currentFocusables.length === 0) return
+
+      const first = currentFocusables[0]
+      const last = currentFocusables[currentFocusables.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [selectedSession])
+
   useEffect(() => {
     loadData()
   }, [])
@@ -910,6 +951,7 @@ export default function PlanPage() {
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedSession(null)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
+            ref={slideOverRef}
             className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-md bg-stone-950 border-l border-white/[0.06] h-full overflow-y-auto shadow-2xl animate-in"
             style={{ animation: 'slideInRight 0.3s ease-out' }}
             onClick={e => e.stopPropagation()}
