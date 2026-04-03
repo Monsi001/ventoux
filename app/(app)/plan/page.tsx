@@ -318,6 +318,19 @@ export default function PlanPage() {
     if (indoor) {
       const session = plan.weeks[currentWeekIdx]?.sessions.find(s => s.id === sessionId)
       if (session) {
+        // If already has a linked workout, just load its detail
+        if (session.mywhooshWorkoutId && session.mywhooshWorkoutName) {
+          if (selectedSession?.id === sessionId) {
+            setSelectedSession({ ...selectedSession, indoor: true, mywhooshWorkoutId: session.mywhooshWorkoutId, mywhooshWorkoutName: session.mywhooshWorkoutName })
+          }
+          loadWorkoutDetail(session.mywhooshWorkoutId)
+          await fetch('/api/plan/update-session', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planId: plan.id, weekIndex: currentWeekIdx, sessionId, updates: { indoor: true } }),
+          }).catch(() => {})
+          return
+        }
         try {
           const res = await fetch(`/api/workouts?sessionType=${session.type}&duration=${session.duration}&tss=${session.tssTarget || ''}&limit=1`)
           if (res.ok) {
