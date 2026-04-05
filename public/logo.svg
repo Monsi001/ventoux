@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" fill="none">
+  <!-- Mountain silhouette -->
+  <path d="M4 52 L28 12 L40 28 L52 8 L64 28 L76 16 L96 52 Z" fill="#FF6B35"/>
+  <path d="M52 8 L64 28 L76 16 L96 52 L60 52 Z" fill="#E85A28" opacity="0.7"/>
+  <!-- Snow cap -->
+  <path d="M46 18 L52 8 L58 18 Q52 20 46 18Z" fill="white" opacity="0.9"/>
+  <!-- Text -->
+  <text x="108" y="28" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="26" fill="white" letter-spacing="-0.5">VENTOUX</text>
+  <text x="108" y="48" font-family="system-ui, -apple-system, sans-serif" font-weight="400" font-size="14" fill="#FF6B35" letter-spacing="4">TRAINING</text>
+</svg>
