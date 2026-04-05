@@ -47,7 +47,7 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
 
 USER nextjs
-EXPOSE 3000
-ENV PORT 3000
+EXPOSE 3002
+ENV PORT 3002
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node server.js"]
