@@ -105,6 +105,7 @@ export default function PlanPage() {
   const [loadingRide, setLoadingRide] = useState(false)
   const [planStartDate, setPlanStartDate] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [strengthPerWeek, setStrengthPerWeek] = useState(1)
+  const [showRegenSettings, setShowRegenSettings] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const slideOverRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
@@ -738,10 +739,13 @@ export default function PlanPage() {
             )}
             <GlossaryButton />
             <button
-              onClick={generatePlan}
-              disabled={generating}
-              className="p-2 rounded-lg text-stone-500 hover:text-ventoux-400 hover:bg-ventoux-500/10 transition-all"
-              title="Régénérer le plan"
+              onClick={() => setShowRegenSettings(v => !v)}
+              className={`p-2 rounded-lg transition-all ${
+                showRegenSettings
+                  ? 'text-ventoux-400 bg-ventoux-500/10'
+                  : 'text-stone-500 hover:text-ventoux-400 hover:bg-ventoux-500/10'
+              }`}
+              title="Options de régénération"
             >
               <RefreshCw size={15} />
             </button>
@@ -754,6 +758,48 @@ export default function PlanPage() {
             </button>
           </div>
         </div>
+
+        {/* Regen settings panel */}
+        {showRegenSettings && (
+          <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3 animate-in">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-1">
+                <Calendar size={13} className="text-stone-400 flex-shrink-0" />
+                <input
+                  type="date"
+                  value={planStartDate}
+                  onChange={e => setPlanStartDate(e.target.value)}
+                  className="input text-xs py-1.5 px-2 flex-1 [color-scheme:dark]"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Dumbbell size={13} className={strengthPerWeek > 0 ? 'text-purple-400' : 'text-stone-500'} />
+                <div className="flex items-center gap-0.5">
+                  {[0, 1, 2, 3].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setStrengthPerWeek(n)}
+                      className={`w-7 h-7 rounded-md text-xs font-medium transition-all ${
+                        strengthPerWeek === n
+                          ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30'
+                          : 'text-stone-500 hover:text-stone-300'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => { generatePlan(); setShowRegenSettings(false) }}
+              disabled={generating}
+              className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2"
+            >
+              <Sparkles size={14} /> Régénérer le plan
+            </button>
+          </div>
+        )}
 
         {/* Row 2: Progress bars — Volume & TSS */}
         <div className="grid grid-cols-2 gap-3 mt-2.5">
