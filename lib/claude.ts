@@ -16,7 +16,7 @@ interface GeneratePlanInput {
   currentCTL?: number
   currentATL?: number
   startDate?: string  // ISO date — début du plan (permet d'antidater)
-  includeStrength?: boolean  // inclure séances renfo (défaut: true)
+  strengthPerWeek?: number  // nombre de séances renfo par semaine (défaut: 1, max: 3)
 }
 
 export async function generateTrainingPlan(input: GeneratePlanInput): Promise<{
@@ -24,7 +24,7 @@ export async function generateTrainingPlan(input: GeneratePlanInput): Promise<{
   phases: TrainingPhase[]
   aiNotes: string
 }> {
-  const { user, race, recentActivities, constraints, currentCTL = 40, currentATL = 40, startDate, includeStrength = true } = input
+  const { user, race, recentActivities, constraints, currentCTL = 40, currentATL = 40, startDate, strengthPerWeek = 1 } = input
 
   const raceDate = new Date(race.date)
   const now = new Date()
@@ -69,11 +69,15 @@ Course: ${race.name}, ${format(raceDate, 'dd/MM/yyyy')}, ${race.distance}km, ${r
 Plan total: ${totalWeeks} semaines (début ${format(planStart, 'dd/MM/yyyy')}). On est en semaine ${currentWeekNumber}/${totalWeeks}, il reste ${weeksRemaining} semaines.
 Volume récent: ~${weeklyHours}h/sem. Activités récentes: ${activitySummary || 'aucune'}.
 Adapte la phase et l'intensité au fait qu'on est en semaine ${currentWeekNumber} du plan. Assure une progression de charge cohérente sur les 4 semaines (3 semaines montée + 1 semaine récup si pertinent).
-Génère TOUTES les phases (du début à la fin du plan) et les séances des ${NUM_WEEKS} SEMAINES suivantes: ${weeksListStr}. ${includeStrength ? 'CHAQUE semaine: 3 séances vélo + 1 séance STRENGTH = 4 séances total.' : 'CHAQUE semaine: 3 séances vélo uniquement, PAS de séance STRENGTH.'} Répartition type: 1 intensité (THRESHOLD/VO2MAX/SWEET_SPOT), 1 endurance (ENDURANCE/TEMPO/LONG_RIDE), 1 récup ou endurance courte. JAMAIS 2 séances vélo le même jour${includeStrength ? ' (seul combo autorisé: 1 vélo + 1 STRENGTH)' : ''}. Descriptions vélo: 5 mots max.${includeStrength ? ' STRENGTH: exercices détaillés (nom, séries x reps, repos).' : ''}
+Génère TOUTES les phases (du début à la fin du plan) et les séances des ${NUM_WEEKS} SEMAINES suivantes: ${weeksListStr}. CHAQUE semaine: 3 séances vélo indoor + ${strengthPerWeek} séance(s) STRENGTH + 1 sortie longue weekend = ${3 + strengthPerWeek + 1} séances total.${strengthPerWeek === 0 ? ' PAS de séance STRENGTH.' : ''}
+RÉPARTITION SEMAINE/WEEKEND:
+- SEMAINE (LUN-VEN): 3 séances vélo indoor (home trainer)${strengthPerWeek > 0 ? ` + ${strengthPerWeek} séance(s) STRENGTH` : ''}. Toutes indoor=true. Répartition vélo: 1 intensité (THRESHOLD/VO2MAX/SWEET_SPOT), 1 endurance/tempo (ENDURANCE/TEMPO), 1 récup ou endurance courte (RECOVERY/ENDURANCE).${strengthPerWeek > 0 ? ` Les séances STRENGTH peuvent être le même jour qu'une séance vélo (seul doublé autorisé).` : ''}
+- WEEKEND (SAM ou DIM): 1 sortie longue EXTÉRIEURE (indoor=false). Type LONG_RIDE ou ENDURANCE. Durée plus longue (2h-4h selon la phase). C'est LA séance de volume de la semaine. Description: terrain/parcours adapté (cols, vallonné, plat selon l'objectif).
+JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Descriptions vélo: 5 mots max.${strengthPerWeek > 0 ? ' STRENGTH: exercices détaillés (nom, séries x reps, repos).' : ''}
 Types vélo: ENDURANCE, TEMPO, THRESHOLD, VO2MAX, SWEET_SPOT, RECOVERY, LONG_RIDE, RACE_SIM.
 ${ftpTestStr}
 JSON compact, format EXACT:
-{"phases":[{"name":"Base","type":"BASE","startWeek":1,"endWeek":4,"description":"...","weeklyHoursTarget":8}],"weeks":[{"weekNumber":${weekStarts[0].num},"weekStart":"${weekStarts[0].start}","phase":"BUILD","totalHours":6,"totalTss":300,"notes":"...","sessions":[{"id":"w${weekStarts[0].num}-s1","day":"TUE","type":"THRESHOLD","name":"Seuil","duration":60,"description":"2x20min au seuil","tssTarget":75,"intensityZone":4,"indoor":true},${includeStrength ? `{"id":"w${weekStarts[0].num}-s2","day":"WED","type":"STRENGTH","name":"Renfo jambes","duration":40,"description":"Squats 4x12, Fentes 3x10/j (60s repos), Gainage planche 3x45s, Pont fessier 3x20, Extensions lombaires 3x15","tssTarget":0,"intensityZone":1,"indoor":true},` : ''}{"id":"w${weekStarts[0].num}-s3","day":"THU","type":"ENDURANCE","name":"Z2","duration":75,"description":"Z2 cadence haute","tssTarget":55,"intensityZone":2,"indoor":true},{"id":"w${weekStarts[0].num}-s4","day":"SAT","type":"SWEET_SPOT","name":"Sweet spot","duration":90,"description":"3x15min sweet spot","tssTarget":85,"intensityZone":3,"indoor":true}]}],"aiNotes":"..."}`
+{"phases":[{"name":"Base","type":"BASE","startWeek":1,"endWeek":4,"description":"...","weeklyHoursTarget":8}],"weeks":[{"weekNumber":${weekStarts[0].num},"weekStart":"${weekStarts[0].start}","phase":"BUILD","totalHours":6,"totalTss":300,"notes":"...","sessions":[{"id":"w${weekStarts[0].num}-s1","day":"TUE","type":"THRESHOLD","name":"Seuil","duration":60,"description":"2x20min au seuil","tssTarget":75,"intensityZone":4,"indoor":true},${strengthPerWeek > 0 ? `{"id":"w${weekStarts[0].num}-s2","day":"WED","type":"STRENGTH","name":"Renfo jambes","duration":40,"description":"Squats 4x12, Fentes 3x10/j (60s repos), Gainage planche 3x45s, Pont fessier 3x20, Extensions lombaires 3x15","tssTarget":0,"intensityZone":1,"indoor":true},` : ''}{"id":"w${weekStarts[0].num}-s3","day":"THU","type":"ENDURANCE","name":"Z2","duration":75,"description":"Z2 cadence haute","tssTarget":55,"intensityZone":2,"indoor":true},{"id":"w${weekStarts[0].num}-s4","day":"SAT","type":"LONG_RIDE","name":"Sortie longue","duration":180,"description":"Sortie vallonnée cols","tssTarget":150,"intensityZone":2,"indoor":false}]}],"aiNotes":"..."}`
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
@@ -176,7 +180,8 @@ Notes : ${constraints.notes || 'aucune'}` : 'Aucune contrainte spécifique'}
 FTP athlète : ${userFtp}W
 
 ## Règles importantes
-- Si la météo est mauvaise pour une sortie extérieure, convertis-la en séance indoor (indoor: true). Le système associera automatiquement un workout MyWhoosh adapté.
+- Les séances en semaine (LUN-VEN) sont sur home trainer (indoor: true). La séance du weekend (SAM/DIM) est une sortie longue extérieure (indoor: false).
+- Si la météo est mauvaise pour la sortie weekend, convertis-la en séance indoor (indoor: true) avec un type adapté (ENDURANCE ou SWEET_SPOT longue durée). Le système associera automatiquement un workout MyWhoosh adapté.
 - Pour les séances STRENGTH, détaille les exercices (nom, séries, répétitions, repos)
 - Conserve le type et l'intensityZone appropriés pour chaque séance vélo
 
@@ -237,7 +242,7 @@ export async function readjustAfterChange(input: ReadjustInput): Promise<{
 L'athlète a modifié la séance "${changedSessionId}": ${changeDescription}.
 Ajuste l'INTENSITÉ, la DURÉE ou le TYPE des AUTRES séances si nécessaire pour garder un plan cohérent.
 INTERDIT: NE CHANGE PAS le jour (day) des séances. NE CHANGE PAS la séance "${changedSessionId}". Garde les mêmes id, mêmes jours.
-Règles: 3 séances vélo + 1 STRENGTH par semaine. JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Pas 2 intenses consécutives, repos min 1j après VO2MAX/THRESHOLD. STRENGTH: exercices détaillés (nom, séries x reps, repos). Si aucun ajustement nécessaire, renvoie les semaines telles quelles.
+Règles: 3 séances vélo indoor en semaine + 1 STRENGTH + 1 sortie longue extérieure le weekend. JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH). Séances LUN-VEN = indoor: true, weekend = indoor: false (sauf si converti pour météo). Pas 2 intenses consécutives, repos min 1j après VO2MAX/THRESHOLD. STRENGTH: exercices détaillés (nom, séries x reps, repos). Si aucun ajustement nécessaire, renvoie les semaines telles quelles.
 Semaines:
 ${JSON.stringify(weeksSummary)}
 JSON: {"weeks":[même structure, mêmes jours],"explanation":"1-2 phrases"}`
@@ -348,6 +353,7 @@ Adapte le plan de la semaine en conséquence. Exemples:
 
 Règles:
 - JAMAIS 2 séances vélo le même jour (seul combo autorisé: 1 vélo + 1 STRENGTH)
+- Séances semaine (LUN-VEN) = indoor (home trainer). Weekend (SAM/DIM) = sortie longue extérieure (indoor: false), sauf si météo/dispo mauvaise → passer en indoor: true
 - Garde les mêmes id et jours (day) pour les séances existantes
 - Tu peux changer type, durée, tssTarget, intensityZone, description, indoor
 - Tu peux mettre une séance en REST (durée 0, tss 0) pour l'annuler

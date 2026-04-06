@@ -104,7 +104,7 @@ export default function PlanPage() {
   const [rideSuggestions, setRideSuggestions] = useState<any[] | null>(null)
   const [loadingRide, setLoadingRide] = useState(false)
   const [planStartDate, setPlanStartDate] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
-  const [includeStrength, setIncludeStrength] = useState(true)
+  const [strengthPerWeek, setStrengthPerWeek] = useState(1)
   const [showConfetti, setShowConfetti] = useState(false)
   const slideOverRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
@@ -192,7 +192,7 @@ export default function PlanPage() {
       const res = await fetch('/api/plan/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ raceId: selectedRaceId, startDate: planStartDate, includeStrength }),
+        body: JSON.stringify({ raceId: selectedRaceId, startDate: planStartDate, strengthPerWeek }),
       })
 
       if (!res.ok) {
@@ -622,17 +622,25 @@ export default function PlanPage() {
                 className="input text-sm [color-scheme:dark]"
               />
             </div>
-            <button
-              onClick={() => setIncludeStrength(v => !v)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm w-full justify-center ${
-                includeStrength
-                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
-                  : 'bg-white/[0.03] border-white/[0.06] text-stone-500'
-              }`}
-            >
-              <Dumbbell size={15} />
-              {includeStrength ? 'Renforcement inclus' : 'Sans renforcement'}
-            </button>
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.03] text-sm w-full">
+              <Dumbbell size={15} className={strengthPerWeek > 0 ? 'text-purple-400' : 'text-stone-500'} />
+              <span className="text-stone-400 flex-1">Renfo/sem</span>
+              <div className="flex items-center gap-1">
+                {[0, 1, 2, 3].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setStrengthPerWeek(n)}
+                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                      strengthPerWeek === n
+                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                        : 'text-stone-500 hover:text-stone-300 hover:bg-white/[0.05]'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button
               onClick={generatePlan}
               disabled={generating || !selectedRaceId}
@@ -677,121 +685,108 @@ export default function PlanPage() {
     <div className="animate-in pb-8">
       <Confetti trigger={showConfetti} />
       {/* Sticky header */}
-      <div className="sticky top-0 z-30 -mx-4 px-4 pt-2 pb-4 bg-gradient-to-b from-stone-950 via-stone-950/95 to-transparent">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Week nav */}
+      <div className="sticky top-0 z-30 -mx-4 px-4 pt-2 pb-3 bg-gradient-to-b from-stone-950 via-stone-950/95 to-transparent">
+        {/* Row 1: Week nav + actions */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => setCurrentWeekIdx(i => Math.max(0, i - 1))}
               disabled={currentWeekIdx === 0}
-              className="p-2 rounded-lg text-stone-500 hover:text-summit-light hover:bg-white/[0.05] disabled:opacity-20 transition-all"
+              className="p-1.5 rounded-lg text-stone-500 hover:text-summit-light hover:bg-white/[0.05] disabled:opacity-20 transition-all"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
             <div className="min-w-0">
-              <h1 className="font-display text-xl md:text-2xl font-bold text-summit-light uppercase tracking-wide truncate">
-                Semaine {currentWeek?.weekNumber || currentWeekIdx + 1}
-              </h1>
-              {currentWeek && (
-                <div className="flex items-center gap-2 mt-0.5">
-                  {currentWeek.phase && (
-                    <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${PHASE_COLORS[getPhaseKey(currentWeek.phase)] || ''}`}>
-                      {/* Lookup friendly name from plan.phases, fallback to week.phase */}
-                      {plan!.phases?.find((p: any) => currentWeek.weekNumber >= p.startWeek && currentWeek.weekNumber <= p.endWeek)?.name || currentWeek.phase}
-                    </span>
-                  )}
-                  <span className="text-stone-400 text-xs">
-                    {format(new Date(currentWeek.weekStart), 'd MMM', { locale: fr })}
-                    {' — '}
-                    {format(addDays(new Date(currentWeek.weekStart), 6), 'd MMM yyyy', { locale: fr })}
+              <div className="flex items-center gap-2">
+                <h1 className="font-display text-lg md:text-xl font-bold text-summit-light uppercase tracking-wide">
+                  S{currentWeek?.weekNumber || currentWeekIdx + 1}
+                </h1>
+                {currentWeek?.phase && (
+                  <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${PHASE_COLORS[getPhaseKey(currentWeek.phase)] || ''}`}>
+                    {plan!.phases?.find((p: any) => currentWeek.weekNumber >= p.startWeek && currentWeek.weekNumber <= p.endWeek)?.name || currentWeek.phase}
                   </span>
-                </div>
+                )}
+              </div>
+              {currentWeek && (
+                <p className="text-stone-500 text-[11px]">
+                  {format(new Date(currentWeek.weekStart), 'd MMM', { locale: fr })}
+                  {' — '}
+                  {format(addDays(new Date(currentWeek.weekStart), 6), 'd MMM', { locale: fr })}
+                </p>
               )}
             </div>
             <button
               onClick={() => setCurrentWeekIdx(i => Math.min((plan!.weeks?.length || 1) - 1, i + 1))}
               disabled={currentWeekIdx >= (plan!.weeks?.length || 1) - 1}
-              className="p-2 rounded-lg text-stone-500 hover:text-summit-light hover:bg-white/[0.05] disabled:opacity-20 transition-all"
+              className="p-1.5 rounded-lg text-stone-500 hover:text-summit-light hover:bg-white/[0.05] disabled:opacity-20 transition-all"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           </div>
 
-          {/* Right: stats + actions */}
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-5 text-right">
-              <div>
-                <p className="font-display text-lg font-bold text-summit-light">
-                  {actualWeekHours > 0 ? `${actualWeekHours}` : '—'}
-                  <span className="text-stone-400 text-xs font-normal"> / {weekTotalHours}h</span>
-                </p>
-                <p className="text-stone-400 text-[10px] uppercase tracking-widest">Volume</p>
-              </div>
-              <div>
-                <p className="font-display text-lg font-bold text-summit-light">
-                  {actualWeekTss > 0 ? actualWeekTss : '—'}
-                  <span className="text-stone-400 text-xs font-normal"> / {weekTotalTss}</span>
-                </p>
-                <p className="text-stone-400 text-[10px] uppercase tracking-widest"><Term term="TSS">TSS</Term></p>
-              </div>
-            </div>
-            <GlossaryButton />
+          <div className="flex items-center gap-1">
             {races.length > 1 && (
               <select
                 value={selectedRaceId}
                 onChange={e => setSelectedRaceId(e.target.value)}
-                className="input text-xs py-1 px-2 max-w-[160px] [color-scheme:dark]"
+                className="input text-xs py-1 px-2 max-w-[140px] [color-scheme:dark]"
               >
                 {races.map(r => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </select>
             )}
-            <div className="flex items-center gap-1">
-              <Calendar size={14} className="text-stone-400 flex-shrink-0" />
-              <input
-                type="date"
-                value={planStartDate}
-                onChange={e => setPlanStartDate(e.target.value)}
-                className="input text-xs py-1 px-2 w-[130px] [color-scheme:dark]"
-              />
-            </div>
-            <button
-              onClick={() => setIncludeStrength(v => !v)}
-              className={`p-2 rounded-lg transition-all ${
-                includeStrength
-                  ? 'text-purple-400 bg-purple-500/10'
-                  : 'text-stone-400 hover:text-stone-400'
-              }`}
-              title={includeStrength ? 'Renfo inclus (cliquer pour exclure)' : 'Sans renfo (cliquer pour inclure)'}
-            >
-              <Dumbbell size={16} />
-            </button>
+            <GlossaryButton />
             <button
               onClick={generatePlan}
               disabled={generating}
               className="p-2 rounded-lg text-stone-500 hover:text-ventoux-400 hover:bg-ventoux-500/10 transition-all"
-              title="Régénérer"
+              title="Régénérer le plan"
             >
-              <RefreshCw size={16} />
+              <RefreshCw size={15} />
             </button>
             <button
               onClick={deletePlan}
               className="p-2 rounded-lg text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
               title="Supprimer le plan"
             >
-              <Trash2 size={16} />
+              <Trash2 size={15} />
             </button>
           </div>
         </div>
 
-        {/* Mobile stats row */}
-        <div className="flex sm:hidden items-center gap-3 mt-2 text-xs text-stone-500">
-          <span className="font-display font-bold text-summit-light">{actualWeekHours > 0 ? actualWeekHours : '—'}<span className="text-stone-400 font-normal">/{weekTotalHours}h</span></span>
-          <span>·</span>
-          <span><Term term="TSS">TSS {actualWeekTss > 0 ? actualWeekTss : '—'}/{weekTotalTss}</Term></span>
-          <span>·</span>
-          <span>{currentWeek?.sessions?.length || 0} séances</span>
+        {/* Row 2: Progress bars — Volume & TSS */}
+        <div className="grid grid-cols-2 gap-3 mt-2.5">
+          <div>
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="text-[10px] text-stone-500 uppercase tracking-wider">Volume</span>
+              <span className="text-xs text-stone-300 font-medium">
+                {actualWeekHours > 0 ? `${actualWeekHours}h` : '0h'}
+                <span className="text-stone-600"> / {weekTotalHours}h</span>
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                style={{ width: `${weekTotalHours > 0 ? Math.min(100, (actualWeekHours / weekTotalHours) * 100) : 0}%` }}
+              />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="text-[10px] text-stone-500 uppercase tracking-wider"><Term term="TSS">TSS</Term></span>
+              <span className="text-xs text-stone-300 font-medium">
+                {actualWeekTss > 0 ? actualWeekTss : '0'}
+                <span className="text-stone-600"> / {weekTotalTss}</span>
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                style={{ width: `${weekTotalTss > 0 ? Math.min(100, (actualWeekTss / weekTotalTss) * 100) : 0}%` }}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Segmented control */}

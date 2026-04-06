@@ -1,5 +1,5 @@
 'use client'
-import { Check, ChevronRight, Bike } from 'lucide-react'
+import { Check, ChevronRight, Bike, Sun } from 'lucide-react'
 import type { TrainingSession } from '@/types'
 
 const TYPE_BG: Record<string, string> = {
@@ -59,6 +59,11 @@ export default function SessionCard({ session, onClick, done, compact, draggable
         <div className="flex items-center gap-1">
           {done && <Check size={9} className="text-green-400" />}
           <span className="font-semibold truncate">{TYPE_LABELS[session.type] || session.type}</span>
+          {session.type !== 'STRENGTH' && session.type !== 'REST' && (
+            session.indoor
+              ? <Bike size={8} className="text-cyan-400/50 flex-shrink-0" />
+              : <Sun size={8} className="text-amber-400/50 flex-shrink-0" />
+          )}
         </div>
         <div className="opacity-60 mt-0.5">{session.duration}min</div>
         {session.indoor && session.mywhooshWorkoutName && (
@@ -90,7 +95,11 @@ export default function SessionCard({ session, onClick, done, compact, draggable
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {session.indoor && <Bike size={12} className="text-cyan-400/50" />}
+          {session.type !== 'STRENGTH' && session.type !== 'REST' && (
+            session.indoor
+              ? <Bike size={13} className="text-cyan-400/50" />
+              : <Sun size={13} className="text-amber-400/50" />
+          )}
           {done && <Check size={14} className="text-green-400" />}
           <ChevronRight size={14} className="text-stone-600" />
         </div>
