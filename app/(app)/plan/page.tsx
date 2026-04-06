@@ -422,10 +422,23 @@ export default function PlanPage() {
     } catch (e) {}
   }
 
+  const [matchedActivity, setMatchedActivity] = useState<Activity | null>(null)
+
   function openSessionDetail(session: TrainingSession) {
     setSelectedSession(session)
     setMywhooshWorkout(null)
     setRideSuggestions(null)
+
+    // Check if a Strava/existing activity matches this session
+    if (currentWeek) {
+      const dayIdx = DAY_KEYS.indexOf(session.day)
+      const dayActivities = getActivitiesForDay(currentWeek.weekStart, dayIdx)
+      const matched = matchSessionToActivity(session, dayActivities)
+      setMatchedActivity(matched || null)
+    } else {
+      setMatchedActivity(null)
+    }
+
     if (session.mywhooshWorkoutId) {
       loadWorkoutDetail(session.mywhooshWorkoutId)
     }
@@ -1274,8 +1287,27 @@ export default function PlanPage() {
                 </div>
               </div>
 
-              {/* Mark as done / undo */}
-              {selectedSession.completed ? (
+              {/* Activity match / Mark as done */}
+              {matchedActivity ? (
+                <div className="rounded-xl bg-green-500/10 ring-1 ring-green-500/20 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-green-500/10">
+                    <Check size={16} className="text-green-400 flex-shrink-0" />
+                    <span className="text-green-300 text-sm font-medium flex-1">Réalisée</span>
+                    <span className="text-green-400/60 text-[10px] uppercase">{matchedActivity.source === 'STRAVA' ? 'Strava' : matchedActivity.source === 'MYWHOOSH' ? 'MyWhoosh' : 'Manuel'}</span>
+                  </div>
+                  <div className="px-4 py-3 space-y-2">
+                    <p className="text-sm text-summit-light font-medium">{matchedActivity.name}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-400">
+                      {matchedActivity.duration > 0 && <span>{Math.round(matchedActivity.duration / 60)}min</span>}
+                      {matchedActivity.distance && <span>{matchedActivity.distance.toFixed(1)}km</span>}
+                      {matchedActivity.elevation && <span>{Math.round(matchedActivity.elevation)}m D+</span>}
+                      {matchedActivity.avgPower && <span>{matchedActivity.avgPower}W moy</span>}
+                      {matchedActivity.tss && <span>TSS {Math.round(matchedActivity.tss)}</span>}
+                      {matchedActivity.avgHr && <span>{matchedActivity.avgHr}bpm</span>}
+                    </div>
+                  </div>
+                </div>
+              ) : selectedSession.completed ? (
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-green-500/10 ring-1 ring-green-500/20">
                   <Check size={18} className="text-green-400 flex-shrink-0" />
                   <span className="text-green-300 text-sm font-medium flex-1">Séance validée</span>
