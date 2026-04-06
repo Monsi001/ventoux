@@ -947,23 +947,63 @@ export default function PlanPage() {
       )}
 
       {/* AI Notes — Diagnostic & Stratégie */}
-      {plan!.aiNotes && (
-        <div className="card p-5 mb-8 border-l-4 border-ventoux-500/60">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-ventoux-gradient flex items-center justify-center">
-              <Sparkles size={14} className="text-white" />
+      {plan!.aiNotes && (() => {
+        // Parse aiNotes into structured sections
+        // Split on bullet points, numbered items, or uppercase headers
+        const lines = plan!.aiNotes
+          .split(/\n+/)
+          .map((l: string) => l.trim())
+          .filter(Boolean)
+          // If no newlines, try splitting on bullet markers
+          .flatMap((l: string) => l.includes('• ') && l.indexOf('• ') > 0
+            ? l.split(/(?=• )/).map((s: string) => s.trim()).filter(Boolean)
+            : [l]
+          )
+
+        // Group lines: lines starting with uppercase label + colon are "headers"
+        const sections: Array<{ title?: string; items: string[] }> = []
+        for (const line of lines) {
+          const clean = line.replace(/^[•\-]\s*/, '').trim()
+          if (!clean) continue
+
+          // Detect section headers like "CONTEXTE ATHLÈTE:", "PLAN 8 SEMAINES:", etc.
+          const headerMatch = clean.match(/^([A-ZÀÉÈÊÏÎÔÙÛÜ\s/]{3,}?):\s*(.+)/)
+          if (headerMatch) {
+            const title = headerMatch[1].trim()
+            const rest = headerMatch[2].trim()
+            sections.push({ title, items: rest ? [rest] : [] })
+          } else if (sections.length > 0) {
+            sections[sections.length - 1].items.push(clean)
+          } else {
+            sections.push({ items: [clean] })
+          }
+        }
+
+        return (
+          <div className="card p-5 mb-8 border-l-4 border-ventoux-500/60">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-ventoux-gradient flex items-center justify-center">
+                <Sparkles size={14} className="text-white" />
+              </div>
+              <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
             </div>
-            <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
+            <div className="space-y-3">
+              {sections.map((section, i) => (
+                <div key={i}>
+                  {section.title && (
+                    <p className="text-[11px] text-ventoux-400/80 uppercase tracking-wider font-semibold mb-1">{section.title}</p>
+                  )}
+                  {section.items.map((item, j) => (
+                    <p key={j} className="text-sm text-stone-300 leading-relaxed pl-3 border-l-2 border-white/[0.04] mb-1.5 last:mb-0">
+                      {item.replace(/\.$/, '')}.
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="text-sm text-stone-300 leading-relaxed space-y-2">
-            {plan!.aiNotes.split(/\.\s+/).filter(Boolean).map((sentence: string, i: number) => {
-              const s = sentence.trim().replace(/\.$/, '')
-              if (!s) return null
-              return <p key={i}>• {s}.</p>
-            })}
-          </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Volume chart in overview */}
       <div className="border-t border-white/[0.04] mt-8 mb-8" />
