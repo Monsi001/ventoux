@@ -92,9 +92,9 @@ export default function ActivitiesPage() {
     const res = await fetch('/api/strava/sync', { method: 'POST' })
     const data = await res.json()
     if (res.ok) {
-      setSyncResult(data.synced === 0
+      setSyncResult(data.created === 0
         ? '✓ Déjà à jour — aucune nouvelle activité'
-        : `✓ ${data.synced} activité(s) importée(s)`)
+        : `✓ ${data.created} nouvelle(s) activité(s) importée(s)`)
       loadActivities()
     } else {
       setSyncResult(`Erreur : ${data.error}`)

@@ -23,3 +23,4 @@ docker compose up -d
 ## Git workflow
 - Créer une branche pour chaque nouvelle feature importante (`feat/nom-feature`)
 - Merger dans `main` une fois terminé et testé
+- **Ne JAMAIS pousser (`git push`) sans confirmation explicite de l'utilisateur**

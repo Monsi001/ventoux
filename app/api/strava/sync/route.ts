@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getAllStravaActivities, stravaToActivity, refreshStravaToken } from '@/lib/strava'
 import { calculateTSS } from '@/lib/training'
-import { subDays } from 'date-fns'
+import { subHours } from 'date-fns'
 
 export async function POST() {
   const session = await getServerSession(authOptions)
@@ -34,12 +34,22 @@ export async function POST() {
     accessToken = refreshed.access_token
   }
 
-  // Toujours resync les 14 derniers jours minimum pour ne rien rater
-  // (les activités mises à jour après coup sur Strava seront captées)
-  const after = subDays(new Date(), 14)
+  // Récupérer uniquement les activités après la dernière en base
+  // Avec 2h de marge pour capter les activités modifiées après coup sur Strava
+  const lastActivity = await prisma.activity.findFirst({
+    where: { userId: session.user.id, source: 'STRAVA' },
+    orderBy: { date: 'desc' },
+    select: { date: true },
+  })
+
+  const after = lastActivity?.date
+    ? subHours(lastActivity.date, 2)
+    : undefined // première sync → tout récupérer
+
   const activities = await getAllStravaActivities(accessToken, after)
 
-  let imported = 0
+  let created = 0
+  let updated = 0
   for (const sa of activities) {
     const mapped = stravaToActivity(sa, session.user.id)
 
@@ -51,6 +61,11 @@ export async function POST() {
     }
 
     try {
+      const existing = await prisma.activity.findUnique({
+        where: { stravaId: mapped.stravaId! },
+        select: { id: true },
+      })
+
       await prisma.activity.upsert({
         where: { stravaId: mapped.stravaId! },
         update: {
@@ -68,11 +83,13 @@ export async function POST() {
         },
         create: { ...mapped, tss },
       })
-      imported++
+
+      if (existing) updated++
+      else created++
     } catch (err) {
       console.error(`Strava upsert failed for activity ${mapped.stravaId}:`, err)
     }
   }
 
-  return NextResponse.json({ synced: imported, total: activities.length })
+  return NextResponse.json({ created, updated, total: activities.length })
 }
