@@ -20,6 +20,11 @@ docker compose up -d
 - Les séances de renfo sont générées par l'IA (lib/claude.ts)
 - Prisma singleton dans `lib/db.ts`
 
+## Règles UI
+- Toujours pointer les erreurs constatées AVANT de corriger, attendre validation
+- Les jours de la semaine s'affichent en français (LUN, MAR, MER, JEU, VEN, SAM, DIM)
+- Les séances prévues doivent être triées par jour (lundi → dimanche)
+
 ## Git workflow
 - Créer une branche pour chaque nouvelle feature importante (`feat/nom-feature`)
 - Merger dans `main` une fois terminé et testé

@@ -417,16 +417,32 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
                     {!w.isHistorical && w.week.sessions?.length > 0 && (
                       <div className="mt-3 space-y-1">
                         <p className="text-stone-400 text-[10px] uppercase tracking-wider mb-1">Séances prévues</p>
-                        {w.week.sessions.map((s: any) => (
+                        {[...w.week.sessions].sort((a: any, b: any) => {
+                          const order = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+                          return order.indexOf(a.day) - order.indexOf(b.day)
+                        }).map((s: any) => {
+                          const DAY_KEYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+                          const DAY_FR: Record<string, string> = { MON: 'LUN', TUE: 'MAR', WED: 'MER', THU: 'JEU', FRI: 'VEN', SAT: 'SAM', SUN: 'DIM' }
+                          const CYCLING_TYPES = ['RIDE', 'VIRTUAL_RIDE']
+                          const dayIdx = DAY_KEYS.indexOf(s.day)
+                          const sessionDate = dayIdx >= 0 ? format(addDays(new Date(w.week.weekStart), dayIdx), 'yyyy-MM-dd') : null
+                          const isDone = s.completed || (sessionDate && w.weekActivities.some((a: Activity) => {
+                            const actDate = format(new Date(a.date), 'yyyy-MM-dd')
+                            if (actDate !== sessionDate) return false
+                            if (s.type === 'STRENGTH') return a.type === 'STRENGTH'
+                            return CYCLING_TYPES.includes(a.type)
+                          }))
+                          return (
                           <div key={s.id} className="flex items-center gap-3 text-xs py-1.5 px-2 rounded-lg bg-white/[0.015]">
-                            <span className="text-stone-500 w-8 flex-shrink-0 uppercase">{s.day?.slice(0, 3)}</span>
+                            <span className="text-stone-500 w-8 flex-shrink-0 uppercase">{DAY_FR[s.day] || s.day?.slice(0, 3)}</span>
                             <span className="text-summit-light font-medium truncate flex-1">{s.name || s.type}</span>
                             <span className="text-stone-400 flex-shrink-0">{s.duration}min</span>
                             {s.tssTarget && <span className="text-ventoux-400/70 flex-shrink-0">TSS ~{s.tssTarget}</span>}
                             {s.intensityZone && <span className="text-stone-500 flex-shrink-0">Z{s.intensityZone}</span>}
-                            {s.completed && <CheckCircle2 size={12} className="text-emerald-400 flex-shrink-0" />}
+                            {isDone && <CheckCircle2 size={12} className="text-emerald-400 flex-shrink-0" />}
                           </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
                   </div>
