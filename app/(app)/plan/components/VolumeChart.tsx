@@ -83,8 +83,21 @@ export default function VolumeChart({ plan, activities, currentWeekIdx, onWeekSe
       ? Math.round(weekActivities.filter(a => a.avgSpeed).reduce((s, a) => s + a.avgSpeed!, 0) / weekActivities.filter(a => a.avgSpeed).length * 10) / 10
       : null
 
+    const CYCLING_TYPES = ['RIDE', 'VIRTUAL_RIDE']
+    const DAY_KEYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
     const totalSessions = week.sessions?.length || 0
-    const doneSessions = week.sessions?.filter(s => s.completed).length || 0
+    const doneSessions = week.sessions?.filter(s => {
+      if (s.completed) return true
+      const dayIdx = DAY_KEYS.indexOf(s.day)
+      if (dayIdx < 0) return false
+      const sessionDate = format(addDays(weekStart, dayIdx), 'yyyy-MM-dd')
+      return weekActivities.some(a => {
+        const actDate = format(new Date(a.date), 'yyyy-MM-dd')
+        if (actDate !== sessionDate) return false
+        if (s.type === 'STRENGTH') return a.type === 'STRENGTH'
+        return CYCLING_TYPES.includes(a.type)
+      })
+    }).length || 0
     const completionPct = totalSessions > 0 ? Math.round(doneSessions / totalSessions * 100) : 0
 
     return {
