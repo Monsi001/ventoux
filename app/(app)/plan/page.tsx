@@ -940,7 +940,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.ctl > 60 ? 'text-green-400' : latestPmc.ctl > 30 ? 'text-amber-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.ctl)}
             </p>
-            <p className="text-stone-400 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-400 text-xs uppercase tracking-widest mt-0.5">
               <Term term="CTL">CTL</Term> · Fitness
             </p>
           </div>
@@ -948,7 +948,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.atl > latestPmc.ctl * 1.3 ? 'text-red-400' : 'text-stone-300'}`}>
               {Math.round(latestPmc.atl)}
             </p>
-            <p className="text-stone-400 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-400 text-xs uppercase tracking-widest mt-0.5">
               <Term term="ATL">ATL</Term> · Fatigue
             </p>
           </div>
@@ -956,7 +956,7 @@ export default function PlanPage() {
             <p className={`font-display text-2xl font-bold ${latestPmc.tsb > 5 ? 'text-green-400' : latestPmc.tsb < -20 ? 'text-red-400' : 'text-amber-400'}`}>
               {latestPmc.tsb > 0 ? '+' : ''}{Math.round(latestPmc.tsb)}
             </p>
-            <p className="text-stone-400 text-[10px] uppercase tracking-widest mt-0.5">
+            <p className="text-stone-400 text-xs uppercase tracking-widest mt-0.5">
               <Term term="TSB">TSB</Term> · {latestPmc.tsb > 5 ? 'Reposé' : latestPmc.tsb < -20 ? 'Fatigué' : 'Forme'}
             </p>
           </div>
@@ -1004,14 +1004,14 @@ export default function PlanPage() {
               </div>
               <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {sections.map((section, i) => (
-                <div key={i}>
+                <div key={i} className={i > 0 ? 'pt-3 border-t border-white/[0.04]' : ''}>
                   {section.title && (
-                    <p className="text-[11px] text-ventoux-400/80 uppercase tracking-wider font-semibold mb-1">{section.title}</p>
+                    <p className="text-xs text-ventoux-400 uppercase tracking-wider font-semibold mb-2">{section.title}</p>
                   )}
                   {section.items.map((item, j) => (
-                    <p key={j} className="text-sm text-stone-300 leading-relaxed pl-3 border-l-2 border-white/[0.04] mb-1.5 last:mb-0">
+                    <p key={j} className="text-sm text-stone-300 leading-relaxed pl-3 border-l-2 border-ventoux-500/25 mb-1.5 last:mb-0">
                       {item.replace(/\.$/, '')}.
                     </p>
                   ))}
