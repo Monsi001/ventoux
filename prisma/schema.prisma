@@ -94,6 +94,7 @@ model Activity {
   maxHr       Int?         // bpm
   avgSpeed    Float?       // km/h
   tss         Float?       // Training Stress Score
+  commute     Boolean      @default(false)
   normalizedPower Int?     // watts
   intensityFactor Float?
   calories    Int?

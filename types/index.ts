@@ -114,6 +114,7 @@ export interface Activity {
   maxHr: number | null
   avgSpeed: number | null  // km/h
   tss: number | null
+  commute: boolean
   normalizedPower: number | null
   intensityFactor: number | null
   calories: number | null
@@ -220,6 +221,7 @@ export interface StravaActivity {
   average_heartrate?: number
   max_heartrate?: number
   weighted_average_watts?: number
+  commute?: boolean
   suffer_score?: number
   calories?: number
   map?: {

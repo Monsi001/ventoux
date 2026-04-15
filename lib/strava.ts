@@ -140,6 +140,7 @@ export function stravaToActivity(s: StravaActivity, userId: string) {
     avgSpeed: s.average_speed ? Math.round(s.average_speed * 3.6 * 10) / 10 : null, // m/s → km/h
     normalizedPower: s.weighted_average_watts ? Math.round(s.weighted_average_watts) : null,
     calories: s.calories || null,
+    commute: s.commute ?? false,
   }
 }
 

@@ -79,6 +79,7 @@ export async function POST() {
           avgSpeed: mapped.avgSpeed,
           normalizedPower: mapped.normalizedPower,
           tss: tss ?? undefined,
+          commute: mapped.commute,
           name: mapped.name,
         },
         create: { ...mapped, tss },

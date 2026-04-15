@@ -471,9 +471,13 @@ export default function PlanPage() {
     if (dayActivities.length === 0) return undefined
     // Direct match by activityId if already linked
     if (session.activityId) return dayActivities.find(a => a.id === session.activityId)
-    // Match by compatible activity type
+    // Match by compatible activity type, en excluant les trajets (commute) et les TSS trop faibles
     const compatibleTypes = SESSION_TO_ACTIVITY_TYPE[session.type] || ['RIDE', 'VIRTUAL_RIDE']
-    return dayActivities.find(a => compatibleTypes.includes(a.type))
+    return dayActivities.find(a =>
+      compatibleTypes.includes(a.type) &&
+      !a.commute &&
+      (a.tss === null || a.tss >= 20)
+    )
   }
 
   async function markSessionDone(session: TrainingSession) {
