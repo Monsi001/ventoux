@@ -964,63 +964,37 @@ export default function PlanPage() {
       )}
 
       {/* AI Notes — Diagnostic & Stratégie */}
-      {plan!.aiNotes && (() => {
-        // Parse aiNotes into structured sections
-        // Split on bullet points, numbered items, or uppercase headers
-        const lines = plan!.aiNotes
-          .split(/\n+/)
-          .map((l: string) => l.trim())
-          .filter(Boolean)
-          // If no newlines, try splitting on bullet markers
-          .flatMap((l: string) => l.includes('• ') && l.indexOf('• ') > 0
-            ? l.split(/(?=• )/).map((s: string) => s.trim()).filter(Boolean)
-            : [l]
-          )
-
-        // Group lines: lines starting with uppercase label + colon are "headers"
-        const sections: Array<{ title?: string; items: string[] }> = []
-        for (const line of lines) {
-          const clean = line.replace(/^[•\-]\s*/, '').trim()
-          if (!clean) continue
-
-          // Detect section headers like "CONTEXTE ATHLÈTE:", "PLAN 8 SEMAINES:", etc.
-          const headerMatch = clean.match(/^([A-ZÀÉÈÊÏÎÔÙÛÜ\s/]{3,}?):\s*(.+)/)
-          if (headerMatch) {
-            const title = headerMatch[1].trim()
-            const rest = headerMatch[2].trim()
-            sections.push({ title, items: rest ? [rest] : [] })
-          } else if (sections.length > 0) {
-            sections[sections.length - 1].items.push(clean)
-          } else {
-            sections.push({ items: [clean] })
-          }
-        }
-
-        return (
-          <div className="card p-5 mb-8 border-l-4 border-ventoux-500/60">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-ventoux-gradient flex items-center justify-center">
-                <Sparkles size={14} className="text-white" />
-              </div>
-              <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
+      {plan!.aiNotes && (
+        <div className="card p-5 mb-8 border-l-4 border-ventoux-500/60">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-ventoux-gradient flex items-center justify-center">
+              <Sparkles size={14} className="text-white" />
             </div>
-            <div className="space-y-4">
-              {sections.map((section, i) => (
-                <div key={i} className={i > 0 ? 'pt-3 border-t border-white/[0.04]' : ''}>
-                  {section.title && (
-                    <p className="text-xs text-ventoux-400 uppercase tracking-wider font-semibold mb-2">{section.title}</p>
-                  )}
-                  {section.items.map((item, j) => (
-                    <p key={j} className="text-sm text-stone-300 leading-relaxed pl-3 border-l-2 border-ventoux-500/25 mb-1.5 last:mb-0">
-                      {item.replace(/\.$/, '')}.
-                    </p>
-                  ))}
-                </div>
-              ))}
-            </div>
+            <h3 className="font-display text-sm font-bold text-summit-light uppercase tracking-wider">Diagnostic & Stratégie</h3>
           </div>
-        )
-      })()}
+          <div className="space-y-2">
+            {plan!.aiNotes
+              .split(/\n+/)
+              .map((l: string) => l.trim())
+              .filter(Boolean)
+              .flatMap((l: string) => l.includes('• ') ? l.split(/(?=• )/).map((s: string) => s.trim()).filter(Boolean) : [l])
+              .map((line: string, i: number) => {
+                const clean = line.replace(/^[•\-]\s*/, '').trim()
+                const parts = clean.split(/\*\*(.+?)\*\*/g)
+                return (
+                  <p key={i} className="text-sm text-stone-300 leading-relaxed pl-3 border-l-2 border-ventoux-500/25">
+                    {parts.map((part, j) =>
+                      j % 2 === 1
+                        ? <strong key={j} className="text-stone-100 font-medium">{part}</strong>
+                        : part
+                    )}
+                  </p>
+                )
+              })
+            }
+          </div>
+        </div>
+      )}
 
       {/* Volume chart in overview */}
       <div className="border-t border-white/[0.04] mt-8 mb-8" />
