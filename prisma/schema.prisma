@@ -34,6 +34,7 @@ model User {
   activities    Activity[]
   trainingPlans TrainingPlan[]
   constraints   WeeklyConstraint[]
+  coachMessages CoachMessage[]
 
   @@index([stravaId])
   @@map("users")
@@ -70,11 +71,28 @@ model TrainingPlan {
   aiNotes     String?
   isActive    Boolean  @default(true)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  race Race @relation(fields: [raceId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  race     Race           @relation(fields: [raceId], references: [id], onDelete: Cascade)
+  messages CoachMessage[]
 
   @@index([userId])
   @@map("training_plans")
+}
+
+model CoachMessage {
+  id            String    @id @default(cuid())
+  userId        String
+  planId        String
+  role          CoachRole
+  text          String    @db.Text
+  weeksSnapshot Json?     // COACH only: état de `weeks` AVANT l'ajustement (pour revert)
+  createdAt     DateTime  @default(now())
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan TrainingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, createdAt])
+  @@map("coach_messages")
 }
 
 model Activity {
@@ -130,6 +148,11 @@ model WeeklyConstraint {
 enum Role {
   USER
   ADMIN
+}
+
+enum CoachRole {
+  USER
+  COACH
 }
 
 enum ActivitySource {

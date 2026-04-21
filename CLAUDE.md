@@ -9,6 +9,12 @@
 docker compose up -d
 ```
 
+## Base de données
+- **Hébergée sur Railway** (prod + dev partagent la même DB)
+- `DATABASE_URL` dans `.env` pointe sur Railway, pas sur le Postgres local
+- Conséquence : toute migration touche directement la prod → toujours valider avant de lancer `prisma migrate` ou `db push`
+- Pour un changement de schéma : créer la migration SQL manuellement et la faire valider avant exécution
+
 ## Credentials demo
 - Email : `demo@ventoux.app`
 - Mot de passe : `ventoux2026`

@@ -1,6 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Mountain, X, Loader2, MessageCircle, Send } from 'lucide-react'
+import { format, isToday, isYesterday } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import type { TrainingPlan } from '@/types'
 import { invalidateCache } from '@/lib/fetch-cache'
 
@@ -10,17 +12,40 @@ interface CoachChatProps {
   fullPage?: boolean
 }
 
+type Msg = { id?: string; role: 'USER' | 'COACH'; text: string; createdAt: string }
+
+function formatStamp(iso: string) {
+  const d = new Date(iso)
+  const hhmm = format(d, 'HH:mm', { locale: fr })
+  if (isToday(d)) return `Aujourd'hui ${hhmm}`
+  if (isYesterday(d)) return `Hier ${hhmm}`
+  return format(d, "d MMM 'à' HH:mm", { locale: fr })
+}
+
 export default function CoachChat({ plan, onPlanUpdate, fullPage = false }: CoachChatProps) {
   const [chatOpen, setChatOpen] = useState(false)
   const [chatMsg, setChatMsg] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'coach'; text: string }[]>([])
+  const [chatHistory, setChatHistory] = useState<Msg[]>([])
+
+  useEffect(() => {
+    if (!plan?.id) return
+    let cancelled = false
+    fetch(`/api/plan/coach?planId=${plan.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!cancelled && data?.messages) setChatHistory(data.messages)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [plan?.id])
 
   async function sendCoachMessage() {
     if (!chatMsg.trim() || !plan) return
     const msg = chatMsg.trim()
     setChatMsg('')
-    setChatHistory(h => [...h, { role: 'user', text: msg }])
+    const optimistic: Msg = { role: 'USER', text: msg, createdAt: new Date().toISOString() }
+    setChatHistory(h => [...h, optimistic])
     setChatLoading(true)
 
     try {
@@ -32,13 +57,26 @@ export default function CoachChat({ plan, onPlanUpdate, fullPage = false }: Coac
       const data = await res.json()
       if (res.ok && data.weeks) {
         onPlanUpdate(data.weeks)
-        setChatHistory(h => [...h, { role: 'coach', text: data.reply }])
+        setChatHistory(h => {
+          const base = data.userMessage
+            ? h.slice(0, -1).concat(data.userMessage)
+            : h
+          return data.coachMessage ? [...base, data.coachMessage] : base
+        })
         invalidateCache('/api/init')
       } else {
-        setChatHistory(h => [...h, { role: 'coach', text: data.error || 'Erreur, réessaie.' }])
+        setChatHistory(h => [...h, {
+          role: 'COACH',
+          text: data.error || 'Erreur, réessaie.',
+          createdAt: new Date().toISOString(),
+        }])
       }
     } catch {
-      setChatHistory(h => [...h, { role: 'coach', text: 'Erreur réseau.' }])
+      setChatHistory(h => [...h, {
+        role: 'COACH',
+        text: 'Erreur réseau.',
+        createdAt: new Date().toISOString(),
+      }])
     } finally {
       setChatLoading(false)
     }
@@ -69,15 +107,16 @@ export default function CoachChat({ plan, onPlanUpdate, fullPage = false }: Coac
             </div>
           </div>
         )}
-        {chatHistory.map((m: { role: string; text: string }, i: number) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] px-3 py-2 rounded-xl ${fullPage ? 'text-sm' : 'text-sm'} ${
-              m.role === 'user'
+        {chatHistory.map((m, i) => (
+          <div key={m.id ?? i} className={`flex flex-col ${m.role === 'USER' ? 'items-end' : 'items-start'}`}>
+            <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm ${
+              m.role === 'USER'
                 ? 'bg-ventoux-500/20 text-ventoux-200 rounded-br-sm'
                 : 'bg-white/[0.05] text-stone-300 rounded-bl-sm'
             }`}>
               {m.text}
             </div>
+            <span className="mt-1 text-[10px] text-stone-600 px-1">{formatStamp(m.createdAt)}</span>
           </div>
         ))}
         {chatLoading && (
